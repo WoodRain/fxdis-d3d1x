@@ -26,8 +26,11 @@
 
 #include "dxbc.h"
 #include "sm4.h"
+#include "sm4_decompile.h"
+
 #include <iostream>
 #include <fstream>
+#include <memory>
 
 void usage()
 {
@@ -36,7 +39,7 @@ void usage()
     std::cerr << "Not affiliated with or endorsed by Microsoft in any way\n";
     std::cerr << "Latest version available from http://cgit.freedesktop.org/mesa/mesa/\n";
     std::cerr << "\n";
-    std::cerr << "Usage: fxdis FILE\n";
+    std::cerr << "Usage: fxdis FILE [--decompile] [--dump-ast]\n";
     std::cerr << std::endl;
 }
 
@@ -47,6 +50,30 @@ int main(int argc, char** argv)
         usage();
         return EXIT_FAILURE;
     }
+
+	bool decompile = false;
+	bool dump_ast = false;
+
+	if (argc > 2)
+	{
+		for (int i = 2; i < argc; ++i)
+		{
+			if (strcmp(argv[i], "--decompile") == 0)
+			{
+				decompile = true;
+			}
+			else if (strcmp(argv[i], "--dump-ast") == 0)
+			{
+				dump_ast = true;
+			}
+			else
+			{
+				std::cerr << "Unrecognized switch: " << argv[i] << "\n";
+				usage();
+				return EXIT_FAILURE;
+			}
+		}
+	}
 
     std::vector<char> data;
     FILE *pFile = NULL;
@@ -79,22 +106,37 @@ int main(int argc, char** argv)
     }
     fclose(pFile);
 
-    dxbc_container* dxbc = dxbc_parse(&data[0], data.size());
-    if(dxbc)
-    {
-        std::cout << *dxbc;
-        dxbc_chunk_header* sm4_chunk = dxbc_find_shader_bytecode(&data[0], data.size());
-        if(sm4_chunk)
-        {
-            sm4_program* sm4 = sm4_parse(sm4_chunk + 1, bswap_le32(sm4_chunk->size));
-            if(sm4)
-            {
-                std::cout << *sm4;
-                delete sm4;
-            }
-        }
-        delete dxbc;
-    }
+    std::unique_ptr<dxbc_container> dxbc(dxbc_parse(data.data(), data.size()));
+	if (!dxbc)
+	{
+		std::cerr << "Failed to parse DXBC!\n";
+		return EXIT_FAILURE;
+	}
+
+	dxbc_chunk_header* sm4_chunk(dxbc_find_shader_bytecode(data.data(), data.size()));
+	if (!sm4_chunk)
+	{
+		std::cerr << "Failed to parse SM4 chunk header!\n";
+		return EXIT_FAILURE;
+	}
+
+	std::unique_ptr<sm4::program> sm4_p(sm4_parse(sm4_chunk + 1, bswap_le32(sm4_chunk->size)));
+	if (!sm4_p)
+	{
+		std::cerr << "Failed to parse SM4 program!\n";
+		return EXIT_FAILURE;
+	}
+
+	if (decompile)
+	{
+		auto root_node = sm4::decompile(sm4_p.get());
+		if (dump_ast)
+			root_node->dump(std::cout, 0);
+	}
+	else
+	{
+		std::cout << *sm4_p;
+	}
 
     return EXIT_SUCCESS;
 }
