@@ -3,7 +3,7 @@
 
 namespace sm4 {
 
-class instruction_substitution_visitor : public recursive_visitor
+class rewrite_visitor : public recursive_visitor
 {
 public:
 	virtual void visit(binary_op* node);

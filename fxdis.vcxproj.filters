@@ -48,13 +48,13 @@
     <ClCompile Include="src\sm4_text_visitor.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\sm4_instruction_substitution_visitor.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="src\sm4_recursive_visitor.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\sm4_consolidation_visitor.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\sm4_rewrite_visitor.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -80,9 +80,6 @@
     <ClInclude Include="include\sm4_text_visitor.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="include\sm4_instruction_substitution_visitor.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="include\utils.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -90,6 +87,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="include\sm4_consolidation_visitor.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\sm4_rewrite_visitor.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

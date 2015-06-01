@@ -1,4 +1,4 @@
-#include "sm4_instruction_substitution_visitor.h"
+#include "sm4_rewrite_visitor.h"
 #include "sm4.h"
 #include <iostream>
 #include <string>
@@ -170,7 +170,7 @@ void rewrite_node(std::shared_ptr<ast_node>& node)
 		rewrite_swizzle_node(node);
 }
 
-void instruction_substitution_visitor::visit(binary_op* node)
+void rewrite_visitor::visit(binary_op* node)
 {
 	rewrite_node(node->lhs);
 	rewrite_node(node->rhs);
@@ -179,7 +179,7 @@ void instruction_substitution_visitor::visit(binary_op* node)
 	node->rhs->accept(*this);
 }
 
-void instruction_substitution_visitor::visit(function_call_node* node)
+void rewrite_visitor::visit(function_call_node* node)
 {
 	for (auto& arg : node->arguments)
 	{

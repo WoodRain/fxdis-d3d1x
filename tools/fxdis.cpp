@@ -29,7 +29,7 @@
 
 #include "sm4_dump_visitor.h"
 #include "sm4_text_visitor.h"
-#include "sm4_instruction_substitution_visitor.h"
+#include "sm4_rewrite_visitor.h"
 #include "sm4_consolidation_visitor.h"
 
 #include <iostream>
@@ -143,7 +143,7 @@ int main(int argc, char** argv)
 		if (process)
 		{
 			// pass 1
-			sm4::instruction_substitution_visitor sub_visitor;
+			sm4::rewrite_visitor sub_visitor;
 			root_node->accept(sub_visitor);
 
 			sm4::consolidation_visitor cons_visitor;
