@@ -42,6 +42,9 @@
     <ClCompile Include="src\sm4_decompile.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="sm4_ast_to_json.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\dxbc.h">
@@ -60,6 +63,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="include\sm4_decompile.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\picojson.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

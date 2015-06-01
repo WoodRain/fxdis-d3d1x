@@ -131,7 +131,7 @@ int main(int argc, char** argv)
 	{
 		auto root_node = sm4::decompile(sm4_p.get());
 		if (dump_ast)
-			root_node->dump(std::cout, 0);
+			std::cout << root_node->dump().serialize(true);
 	}
 	else
 	{

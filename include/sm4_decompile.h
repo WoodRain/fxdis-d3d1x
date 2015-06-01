@@ -4,6 +4,7 @@
 #include <stdint.h>
 #include <memory>
 #include <vector>
+#include "picojson.h"
 
 struct sm4_program;
 struct sm4_insn;
@@ -15,28 +16,29 @@ typedef sm4_program program;
 typedef sm4_insn instruction;
 typedef sm4_op operand;
 
-#define DECLARE_AST_NODE(node_name) \
+#define DECLARE_AST_NODE(node_name, base) \
+	typedef base base_class; \
 	virtual char const* get_type_string() { return #node_name; }
 
 #define DEFINE_DERIVED_AST_NODE(node_name, base) \
-	class node_name : public base { public: DECLARE_AST_NODE(node_name) };
+	class node_name : public base { public: DECLARE_AST_NODE(node_name, base) };
 	
 class ast_node
 {
 public:
 	virtual ~ast_node() {};
-	DECLARE_AST_NODE(ast_node)
+	DECLARE_AST_NODE(ast_node, ast_node)
 
-	virtual void dump(std::ostream& stream, int depth);
+	virtual picojson::value dump();
 };
 
 class super_node : public ast_node
 {
 public:
 	virtual ~super_node() {};
-	DECLARE_AST_NODE(super_node)
+	DECLARE_AST_NODE(super_node, ast_node)
 
-	virtual void dump(std::ostream& stream, int depth);
+	virtual picojson::value dump();
 
 	std::shared_ptr<super_node> parent;
 	std::vector<std::shared_ptr<ast_node>> children;
@@ -50,9 +52,9 @@ class variable_node : public ast_node
 {
 public:
 	virtual ~variable_node() {};
-	DECLARE_AST_NODE(variable_node)
+	DECLARE_AST_NODE(variable_node, ast_node)
 
-	virtual void dump(std::ostream& stream, int depth);
+	virtual picojson::value dump();
 
 	T value;
 };
@@ -74,9 +76,9 @@ public:
 	}
 
 	virtual ~global_index_node() {};
-	DECLARE_AST_NODE(register_node)
+	DECLARE_AST_NODE(register_node, ast_node)
 
-	virtual void dump(std::ostream& stream, int depth);
+	virtual picojson::value dump();
 
 	int64_t index;
 };
@@ -89,7 +91,7 @@ public:
 				global_index_node(index) \
 			{ \
 			} \
-		DECLARE_AST_NODE(node_name) \
+		DECLARE_AST_NODE(node_name, global_index_node) \
 	}; \
 
 DEFINE_DERIVED_GLOBAL_INDEX_NODE(register_node)
@@ -102,9 +104,9 @@ class vector_node : public ast_node
 {
 public:
 	virtual ~vector_node() {};
-	DECLARE_AST_NODE(vector_node)
+	DECLARE_AST_NODE(vector_node, ast_node)
 
-	virtual void dump(std::ostream& stream, int depth);
+	virtual picojson::value dump();
 
 	std::vector<std::shared_ptr<ast_node>> values; 
 };
@@ -114,9 +116,9 @@ class mask_node : public ast_node
 {
 public:
 	virtual ~mask_node() {};
-	DECLARE_AST_NODE(mask_node)
+	DECLARE_AST_NODE(mask_node, ast_node)
 
-	virtual void dump(std::ostream& stream, int depth);
+	virtual picojson::value dump();
 
 	std::shared_ptr<ast_node> value;
 	std::vector<uint8_t> indices;
@@ -126,9 +128,9 @@ class swizzle_node : public ast_node
 {
 public:
 	virtual ~swizzle_node() {};
-	DECLARE_AST_NODE(swizzle_node)
+	DECLARE_AST_NODE(swizzle_node, ast_node)
 
-	virtual void dump(std::ostream& stream, int depth);
+	virtual picojson::value dump();
 
 	std::shared_ptr<ast_node> value;
 	std::vector<uint8_t> indices;
@@ -138,9 +140,9 @@ class scalar_node : public ast_node
 {
 public:
 	virtual ~scalar_node() {};
-	DECLARE_AST_NODE(scalar_node)
+	DECLARE_AST_NODE(scalar_node, ast_node)
 
-	virtual void dump(std::ostream& stream, int depth);
+	virtual picojson::value dump();
 
 	std::shared_ptr<ast_node> value;
 	uint8_t index;
@@ -150,13 +152,27 @@ class index_node : public ast_node
 {
 public:
 	virtual ~index_node() {};
-	DECLARE_AST_NODE(index_node)
+	DECLARE_AST_NODE(index_node, ast_node)
 
-	virtual void dump(std::ostream& stream, int depth);
+	virtual picojson::value dump();
 
 	std::shared_ptr<ast_node> index;
 	std::shared_ptr<ast_node> value;
 };
+
+// comparison
+class comparison_node : public super_node
+{
+public:
+	virtual ~comparison_node() {};
+
+	virtual picojson::value dump();
+
+	std::shared_ptr<ast_node> value;
+	bool not_zero;
+};
+
+DEFINE_DERIVED_AST_NODE(if_node, comparison_node)
 
 // nullary
 DEFINE_DERIVED_AST_NODE(else_node, super_node)
@@ -168,7 +184,7 @@ class unary_node : public ast_node
 public:
 	virtual ~unary_node() {};
 
-	virtual void dump(std::ostream& stream, int depth);
+	virtual picojson::value dump();
 
 	std::shared_ptr<ast_node> value;
 };
@@ -177,26 +193,13 @@ DEFINE_DERIVED_AST_NODE(negate_node, unary_node)
 DEFINE_DERIVED_AST_NODE(absolute_node, unary_node)
 DEFINE_DERIVED_AST_NODE(saturate_node, unary_node)
 
-class comparison_node : public super_node
-{
-public:
-	virtual ~comparison_node() {};
-
-	virtual void dump(std::ostream& stream, int depth);
-
-	std::shared_ptr<ast_node> value;
-	bool not_zero;
-};
-
-DEFINE_DERIVED_AST_NODE(if_node, comparison_node)
-
 // binary
 class binary_node : public ast_node
 {
 public:
 	virtual ~binary_node() {};
 
-	virtual void dump(std::ostream& stream, int depth);
+	virtual picojson::value dump();
 
 	std::shared_ptr<ast_node> output;
 	std::shared_ptr<ast_node> input;
@@ -217,7 +220,7 @@ class ternary_node : public ast_node
 public:
 	virtual ~ternary_node() {};
 
-	virtual void dump(std::ostream& stream, int depth);
+	virtual picojson::value dump();
 
 	std::shared_ptr<ast_node> output;
 	std::shared_ptr<ast_node> lhs;
@@ -246,7 +249,7 @@ class quaternary_node : public ast_node
 public:
 	virtual ~quaternary_node() {};
 
-	virtual void dump(std::ostream& stream, int depth);
+	virtual picojson::value dump();
 
 	std::shared_ptr<ast_node> output;
 	std::shared_ptr<ast_node> lhs;

@@ -89,6 +89,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="sm4_ast_to_json.cpp" />
     <ClCompile Include="src\dxbc_assemble.cpp" />
     <ClCompile Include="src\dxbc_dump.cpp" />
     <ClCompile Include="src\dxbc_parse.cpp" />
@@ -102,6 +103,7 @@
   <ItemGroup>
     <ClInclude Include="include\dxbc.h" />
     <ClInclude Include="include\le32.h" />
+    <ClInclude Include="include\picojson.h" />
     <ClInclude Include="include\sm4.h" />
     <ClInclude Include="include\sm4_decompile.h" />
     <ClInclude Include="include\sm4_defs.h" />
