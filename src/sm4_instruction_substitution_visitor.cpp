@@ -79,6 +79,17 @@ void rewrite_add_node(std::shared_ptr<ast_node>& node)
 
 		node = new_node;
 	}
+	// rewrite -a + b to b - a
+	else if (old_add_node->lhs->is_type(node_type::negate_node))
+	{
+		auto old_negate_node = std::static_pointer_cast<negate_node>(old_add_node->lhs);
+			
+		auto new_node = std::make_shared<sub_node>();
+		new_node->lhs = old_add_node->rhs;
+		new_node->rhs = old_negate_node->value;
+
+		node = new_node;
+	}
 	// rewrite a + b to a - b when b is all negative
 	else if (old_add_node->rhs->is_type(node_type::vector_node))
 	{
@@ -101,6 +112,42 @@ void rewrite_add_node(std::shared_ptr<ast_node>& node)
 		node = new_node;
 	}
 }
+
+void rewrite_mask_node(std::shared_ptr<ast_node>& node)
+{
+	auto old_mask_node = std::static_pointer_cast<mask_node>(node);
+
+	// mask_node with a size of 1? rewrite to scalar_node
+	if (old_mask_node->indices.size() == 1)
+	{
+		auto new_node = std::make_shared<scalar_node>();
+		new_node->value = old_mask_node->value;
+		new_node->index = old_mask_node->indices.front();
+
+		node = new_node;
+	}
+}
+
+void rewrite_swizzle_node(std::shared_ptr<ast_node>& node)
+{
+	auto old_swizzle_node = std::static_pointer_cast<swizzle_node>(node);
+
+	// swizzle_node where all the elements are the same? rewrite to scalar_node
+	bool same = true;
+	auto first_index = old_swizzle_node->indices.front();
+
+	for (auto index : old_swizzle_node->indices)
+		same &= (index == first_index);
+
+	if (same)
+	{
+		auto new_node = std::make_shared<scalar_node>();
+		new_node->value = old_swizzle_node->value;
+		new_node->index = first_index;
+
+		node = new_node;
+	}
+}
 	
 void rewrite_node(std::shared_ptr<ast_node>& node)
 {
@@ -115,17 +162,21 @@ void rewrite_node(std::shared_ptr<ast_node>& node)
 
 	if (node->is_type(node_type::add_node))
 		rewrite_add_node(node);
-}
 
-void instruction_substitution_visitor::visit(assign_node* node)
-{
-	rewrite_node(node->rhs);
+	if (node->is_type(node_type::mask_node))
+		rewrite_mask_node(node);
+
+	if (node->is_type(node_type::swizzle_node))
+		rewrite_swizzle_node(node);
 }
 
 void instruction_substitution_visitor::visit(binary_op* node)
 {
 	rewrite_node(node->lhs);
 	rewrite_node(node->rhs);
+
+	node->lhs->accept(*this);
+	node->rhs->accept(*this);
 }
 
 }
