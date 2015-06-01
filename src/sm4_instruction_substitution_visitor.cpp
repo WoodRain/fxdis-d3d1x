@@ -78,11 +78,37 @@ void rewrite_node(std::shared_ptr<ast_node>& node)
 
 			node = new_node;
 		}
+		else if (old_add_node->rhs->is_type(node_type::vector_node))
+		{
+			auto old_vector_node = std::static_pointer_cast<vector_node>(old_add_node->rhs);
+
+			// If all the values are negative
+			bool is_negative = true;
+			for (auto value : old_vector_node->values) 
+				is_negative &= value->is_negative();
+
+			// Absolute values on vector
+			if (is_negative)
+				for (auto value : old_vector_node->values)
+					value->absolute();
+
+			auto new_node = std::make_shared<sub_node>();
+			new_node->lhs = old_add_node->lhs;
+			new_node->rhs = old_add_node->rhs;
+
+			node = new_node;
+		}
 	}
 }
 
 void instruction_substitution_visitor::visit(assign_node* node)
 {
+	rewrite_node(node->rhs);
+}
+
+void instruction_substitution_visitor::visit(binary_op* node)
+{
+	rewrite_node(node->lhs);
 	rewrite_node(node->rhs);
 }
 

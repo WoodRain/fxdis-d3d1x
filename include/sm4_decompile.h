@@ -132,6 +132,44 @@ public:
 		int64_t i64;
 		uint64_t u64;
 	};
+
+	void absolute()
+	{
+		switch (this->current_type)
+		{
+		case type::f32:
+			this->f32 = abs(this->f32);
+			break;
+		case type::i32:
+			this->i32 = abs(this->i32);
+			break;
+		case type::f64:
+			this->f64 = abs(this->f64);
+			break;
+		case type::i64:
+			this->i64 = abs(this->i64);
+			break;
+		default:
+			break;
+		}
+	}
+
+	bool is_negative()
+	{
+		switch (this->current_type)
+		{
+		case type::f32:
+			return this->f32 <= 0;
+		case type::i32:
+			return this->i32 <= 0;
+		case type::f64:
+			return this->f64 <= 0;
+		case type::i64:
+			return this->i64 <= 0;
+		default:
+			return true;
+		}
+	}
 };
 
 class global_index_node : public ast_node
