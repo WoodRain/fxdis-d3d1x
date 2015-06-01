@@ -12,6 +12,8 @@ void rewrite_binary_instruction_node(std::shared_ptr<ast_node>& node)
 	// rewrite a = mov(b) to a = b
 	if (inst_node->opcode == SM4_OPCODE_MOV)
 		node = inst_node->input;
+	else if (inst_node->opcode == SM4_OPCODE_RSQ)
+		node = std::make_shared<function_call_node>("rsqrt", inst_node->input);
 }
 
 void rewrite_ternary_instruction_node(std::shared_ptr<ast_node>& node)
@@ -43,6 +45,13 @@ void rewrite_ternary_instruction_node(std::shared_ptr<ast_node>& node)
 		new_node->rhs = inst_node->rhs;
 
 		node = new_node;
+	}
+	// rewrite dp2/3/4 to function calls
+	else if (inst_node->opcode == SM4_OPCODE_DP2 || 
+			inst_node->opcode == SM4_OPCODE_DP3 || 
+			inst_node->opcode == SM4_OPCODE_DP4)
+	{
+		node = std::make_shared<function_call_node>("dot", inst_node->lhs, inst_node->rhs);
 	}
 }
 

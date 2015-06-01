@@ -64,6 +64,12 @@ void consolidation_visitor::visit(super_node* node)
 			this->rewrite(node->rhs);
 		}
 
+		virtual void visit(function_call_node* node)
+		{
+			for (auto& argument : node->arguments)
+				this->rewrite(argument);
+		}
+
 		bool rewrote = false;
 		std::shared_ptr<assign_node> last_node;
 	} roll_visitor;
