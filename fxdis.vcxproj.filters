@@ -54,6 +54,9 @@
     <ClCompile Include="src\sm4_recursive_visitor.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\sm4_consolidation_visitor.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\dxbc.h">
@@ -84,6 +87,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="include\sm4_recursive_visitor.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\sm4_consolidation_visitor.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
