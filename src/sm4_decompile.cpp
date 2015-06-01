@@ -162,74 +162,26 @@ std::shared_ptr<T> decompile_unary(sm4::instruction const* instruction)
 	return node;
 }
 
-template <typename T>
-std::shared_ptr<T> decompile_binary(sm4::instruction const* instruction)
+std::shared_ptr<ast_node> saturate_if_necessary(sm4::instruction const* instruction, std::shared_ptr<ast_node> node)
 {
-	auto node = std::make_shared<T>();
-	node->output = decompile_operand(instruction, 0);
-	node->input = decompile_operand(instruction, 1);
-
-	return node;
-}
-
-template <typename T>
-std::shared_ptr<T> decompile_ternary(sm4::instruction const* instruction)
-{
-	auto node = std::make_shared<T>();
-	node->output = decompile_operand(instruction, 0);
-	node->lhs = decompile_operand(instruction, 1);
-	node->rhs = decompile_operand(instruction, 2);
-
-	return node;
-}
-
-template <typename T>
-std::shared_ptr<T> decompile_quaternary(sm4::instruction const* instruction)
-{
-	auto node = std::make_shared<T>();
-	node->output = decompile_operand(instruction, 0);
-	node->lhs = decompile_operand(instruction, 1);
-	node->rhs1 = decompile_operand(instruction, 2);
-	node->rhs2 = decompile_operand(instruction, 3);
+	if (instruction->insn.sat)
+	{
+		auto sat_node = std::make_shared<saturate_node>();
+		sat_node->value = node;
+		return sat_node;
+	}
 
 	return node;
 }
 
 std::shared_ptr<super_node> decompile(program const* p)
 {
-	std::shared_ptr<super_node> root = std::make_shared<root_node>();
+	auto root = std::make_shared<super_node>();
 
 	for (auto const instruction : p->insns)
 	{
-		std::shared_ptr<ast_node> new_node;
-
 		switch (instruction->opcode)
 		{
-#define NULLARY(opcode, type) \
-		case opcode: \
-			new_node = decompile_nullary<type>(instruction); \
-			break;
-
-#define UNARY(opcode, type) \
-		case opcode: \
-			new_node = decompile_unary<type>(instruction); \
-			break;
-
-#define BINARY(opcode, type) \
-		case opcode: \
-			new_node = decompile_binary<type>(instruction); \
-			break;
-
-#define TERNARY(opcode, type) \
-		case opcode: \
-			new_node = decompile_ternary<type>(instruction); \
-			break;
-
-#define QUATERNARY(opcode, type) \
-		case opcode: \
-			new_node = decompile_quaternary<type>(instruction); \
-			break;
-
 		case SM4_OPCODE_IF:
 		{
 			auto node = decompile_unary<if_node>(instruction);
@@ -252,60 +204,95 @@ std::shared_ptr<super_node> decompile(program const* p)
 			root = root->parent;
 			break;
 
-		NULLARY(SM4_OPCODE_RET, ret_node)
+		case SM4_OPCODE_RET:
+			root->children.push_back(decompile_nullary<ret_node>(instruction));
+			break;
 
-		BINARY(SM4_OPCODE_FRC, frc_node)
-		BINARY(SM4_OPCODE_RSQ, rsq_node)
-		BINARY(SM4_OPCODE_ITOF, itof_node)
-		BINARY(SM4_OPCODE_FTOI, ftoi_node)
-		BINARY(SM4_OPCODE_FTOU, ftou_node)
-		BINARY(SM4_OPCODE_MOV, mov_node)
-		BINARY(SM4_OPCODE_ROUND_NI, round_ni_node)
-		BINARY(SM4_OPCODE_EXP, exp_node)
+		case SM4_OPCODE_FRC:
+		case SM4_OPCODE_RSQ:
+		case SM4_OPCODE_ITOF:
+		case SM4_OPCODE_FTOI:
+		case SM4_OPCODE_FTOU:
+		case SM4_OPCODE_MOV:
+		case SM4_OPCODE_ROUND_NI:
+		case SM4_OPCODE_EXP:
+		{
+			auto node = std::make_shared<binary_instruction_node>();
+			node->opcode = instruction->opcode;
+			node->input = decompile_operand(instruction, 1);
 
-		TERNARY(SM4_OPCODE_MUL, mul_node)
-		TERNARY(SM4_OPCODE_DIV, div_node)
-		TERNARY(SM4_OPCODE_ADD, add_node)
-		TERNARY(SM4_OPCODE_DP3, dp3_node)
-		TERNARY(SM4_OPCODE_DP4, dp4_node)
-		TERNARY(SM4_OPCODE_ISHL, ishl_node)
-		TERNARY(SM4_OPCODE_USHR, ushr_node)
-		TERNARY(SM4_OPCODE_AND, and_node)
-		TERNARY(SM4_OPCODE_OR, or_node)
-		TERNARY(SM4_OPCODE_IADD, iadd_node)
-		TERNARY(SM4_OPCODE_IEQ, ieq_node)
-		TERNARY(SM4_OPCODE_GE, ge_node)
-		TERNARY(SM4_OPCODE_MAX, max_node)
-		TERNARY(SM4_OPCODE_MIN, min_node)
-		TERNARY(SM4_OPCODE_LT, lt_node)
+			auto new_assign_node = std::make_shared<assign_node>();
+			new_assign_node->lhs = decompile_operand(instruction, 0);
+			new_assign_node->rhs = saturate_if_necessary(instruction, node);
 
-		QUATERNARY(SM4_OPCODE_MAD, mad_node)
-		QUATERNARY(SM4_OPCODE_MOVC, movc_node)
+			root->children.push_back(new_assign_node);
+			break;
+		}
 
-#undef BINARY
-#undef TERNARY
-#undef QUATERNARY
+		case SM4_OPCODE_MUL:
+		case SM4_OPCODE_DIV:
+		case SM4_OPCODE_ADD:
+		case SM4_OPCODE_DP3:
+		case SM4_OPCODE_DP4:
+		case SM4_OPCODE_ISHL:
+		case SM4_OPCODE_USHR:
+		case SM4_OPCODE_AND:
+		case SM4_OPCODE_OR:
+		case SM4_OPCODE_IADD:
+		case SM4_OPCODE_IEQ:
+		case SM4_OPCODE_GE:
+		case SM4_OPCODE_MAX:
+		case SM4_OPCODE_MIN:
+		case SM4_OPCODE_LT:
+		{
+			auto node = std::make_shared<ternary_instruction_node>();
+			node->opcode = instruction->opcode;
+			node->lhs = decompile_operand(instruction, 1);
+			node->rhs = decompile_operand(instruction, 2);
+
+			auto new_assign_node = std::make_shared<assign_node>();
+			new_assign_node->lhs = decompile_operand(instruction, 0);
+			new_assign_node->rhs = saturate_if_necessary(instruction, node);
+
+			root->children.push_back(new_assign_node);
+			break;
+		}
+
+		case SM4_OPCODE_MAD:
+		case SM4_OPCODE_MOVC:
+		{
+			auto node = std::make_shared<quaternary_instruction_node>();
+			node->opcode = instruction->opcode;
+			node->lhs = decompile_operand(instruction, 1);
+			node->rhs1 = decompile_operand(instruction, 2);
+			node->rhs2 = decompile_operand(instruction, 3);
+
+			auto new_assign_node = std::make_shared<assign_node>();
+			new_assign_node->lhs = decompile_operand(instruction, 0);
+			new_assign_node->rhs = saturate_if_necessary(instruction, node);
+
+			root->children.push_back(new_assign_node);
+			break;
+		}
 
 		default:
 			std::cerr << "Unhandled opcode: " << sm4_opcode_names[instruction->opcode] << "\n";
 			break;
 		};
-
-		if (new_node)
-		{
-			if (instruction->insn.sat)
-			{
-				auto sat_node = std::make_shared<saturate_node>();
-				sat_node->value = new_node;
-
-				new_node = sat_node;
-			}
-
-			root->children.push_back(new_node);
-		}
 	}
 
 	return root;
 }
+
+// Forgive me for I have sinned
+#define AST_NODE_CLASS(klass) \
+	void ast_visitor::visit(klass* node) \
+	{ \
+		this->visit((klass::base_class*)node); \
+	} \
+
+	AST_NODE_CLASSES
+
+#undef AST_NODE_CLASS
 
 }

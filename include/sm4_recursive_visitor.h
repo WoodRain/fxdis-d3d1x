@@ -1,17 +1,11 @@
 #pragma once
 #include "sm4_decompile.h"
-#include <ostream>
 
 namespace sm4 {
 
-class dump_visitor : public ast_visitor
+class recursive_visitor : public ast_visitor
 {
 public:
-	dump_visitor(std::ostream& stream) :
-		stream_(stream)
-	{
-	}
-
 	virtual void visit(ast_node* node);
 	virtual void visit(super_node* node);
 
@@ -32,15 +26,6 @@ public:
 	virtual void visit(quaternary_instruction_node* node);
 
 	virtual void visit(binary_op* node);
-
-	dump_visitor operator=(dump_visitor const& rhs) = delete;
-
-private:
-	void write_spaces();
-	void write_newline();
-
-	uint32_t depth_ = 0;
-	std::ostream& stream_;
 };
 
 }

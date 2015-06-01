@@ -27,6 +27,8 @@
 #include "dxbc.h"
 #include "sm4.h"
 #include "sm4_dump_visitor.h"
+#include "sm4_text_visitor.h"
+#include "sm4_instruction_substitution_visitor.h"
 
 #include <iostream>
 #include <fstream>
@@ -39,7 +41,7 @@ void usage()
     std::cerr << "Not affiliated with or endorsed by Microsoft in any way\n";
     std::cerr << "Latest version available from http://cgit.freedesktop.org/mesa/mesa/\n";
     std::cerr << "\n";
-    std::cerr << "Usage: fxdis FILE [--decompile] [--dump-ast]\n";
+    std::cerr << "Usage: fxdis FILE [--dont-process] [--decompile] [--dump-ast]\n";
     std::cerr << std::endl;
 }
 
@@ -53,6 +55,7 @@ int main(int argc, char** argv)
 
 	bool decompile = false;
 	bool dump_ast = false;
+	bool process = true;
 
 	if (argc > 2)
 	{
@@ -65,6 +68,10 @@ int main(int argc, char** argv)
 			else if (strcmp(argv[i], "--dump-ast") == 0)
 			{
 				dump_ast = true;
+			}
+			else if (strcmp(argv[i], "--dont-process") == 0)
+			{
+				process = false;
 			}
 			else
 			{
@@ -130,9 +137,21 @@ int main(int argc, char** argv)
 	if (decompile)
 	{
 		auto root_node = sm4::decompile(sm4_p.get());
+		
+		if (process)
+		{
+			sm4::instruction_substitution_visitor sub_visitor;
+			root_node->accept(sub_visitor);
+		}
+
 		if (dump_ast)
 		{
 			sm4::dump_visitor visitor(std::cout);
+			root_node->accept(visitor);
+		}
+		else
+		{
+			sm4::text_visitor visitor(std::cout);
 			root_node->accept(visitor);
 		}
 	}

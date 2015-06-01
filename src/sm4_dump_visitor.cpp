@@ -1,4 +1,5 @@
 #include "sm4_dump_visitor.h"
+#include "sm4.h"
 #include <iostream>
 
 namespace sm4 {
@@ -161,44 +162,52 @@ void dump_visitor::visit(unary_node* node)
 	--depth_;
 }
 
-void dump_visitor::visit(binary_node* node)
+void dump_visitor::visit(binary_instruction_node* node)
 {
 	write_spaces();
-	stream_ << node->get_type_string();
+	stream_ << node->get_type_string() << " (" << sm4_opcode_names[node->opcode] << ")";
 	write_newline();
 
 	++depth_;
-	node->output->accept(*this);
 	node->input->accept(*this);
 	--depth_;
 }
 
-void dump_visitor::visit(ternary_node* node)
+void dump_visitor::visit(ternary_instruction_node* node)
 {
 	write_spaces();
-	stream_ << node->get_type_string();
+	stream_ << node->get_type_string() << " (" << sm4_opcode_names[node->opcode] << ")";
 	write_newline();
 
 	++depth_;
-	node->output->accept(*this);
 	node->lhs->accept(*this);
 	node->rhs->accept(*this);
 	--depth_;
 }
 
-void dump_visitor::visit(quaternary_node* node)
+void dump_visitor::visit(quaternary_instruction_node* node)
 {
 	write_spaces();
-	stream_ << node->get_type_string();
+	stream_ << node->get_type_string() << " (" << sm4_opcode_names[node->opcode] << ")";
 	write_newline();
 
 	++depth_;
-	node->output->accept(*this);
 	node->lhs->accept(*this);
 	node->rhs1->accept(*this);
 	node->rhs2->accept(*this);
 	--depth_;
 }
 
+void dump_visitor::visit(binary_op* node)
+{
+	write_spaces();
+	stream_ << node->get_type_string();
+	write_newline();
+
+	++depth_;
+	node->lhs->accept(*this);
+	node->rhs->accept(*this);
+	--depth_;
+}
 
 }

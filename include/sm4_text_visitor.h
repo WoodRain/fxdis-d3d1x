@@ -4,10 +4,10 @@
 
 namespace sm4 {
 
-class dump_visitor : public ast_visitor
+class text_visitor : public ast_visitor
 {
 public:
-	dump_visitor(std::ostream& stream) :
+	text_visitor(std::ostream& stream) :
 		stream_(stream)
 	{
 	}
@@ -31,9 +31,18 @@ public:
 	virtual void visit(ternary_instruction_node* node);
 	virtual void visit(quaternary_instruction_node* node);
 
-	virtual void visit(binary_op* node);
+	virtual void visit(ret_node* node);
 
-	dump_visitor operator=(dump_visitor const& rhs) = delete;
+	virtual void visit(negate_node* node);
+	virtual void visit(absolute_node* node);
+
+	virtual void visit(add_node* node);
+	virtual void visit(sub_node* node);
+	virtual void visit(mul_node* node);
+	virtual void visit(div_node* node);
+	virtual void visit(assign_node* node);
+
+	text_visitor operator=(text_visitor const& rhs) = delete;
 
 private:
 	void write_spaces();

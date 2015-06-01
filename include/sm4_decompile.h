@@ -15,51 +15,71 @@ typedef sm4_program program;
 typedef sm4_insn instruction;
 typedef sm4_op operand;
 
-class ast_node;
-class super_node;
+#define AST_NODE_CLASSES \
+	/* General */ \
+	AST_NODE_CLASS(ast_node) \
+	AST_NODE_CLASS(super_node) \
+	/* Constants, variables */ \
+	AST_NODE_CLASS(constant_node) \
+	AST_NODE_CLASS(global_index_node) \
+	AST_NODE_CLASS(vector_node) \
+	AST_NODE_CLASS(register_node) \
+	AST_NODE_CLASS(constant_buffer_node) \
+	AST_NODE_CLASS(immediate_constant_buffer_node) \
+	AST_NODE_CLASS(input_node) \
+	AST_NODE_CLASS(output_node) \
+	/* Indexing */ \
+	AST_NODE_CLASS(mask_node) \
+	AST_NODE_CLASS(swizzle_node) \
+	AST_NODE_CLASS(scalar_node) \
+	AST_NODE_CLASS(index_node) \
+	/* Comparison */ \
+	AST_NODE_CLASS(comparison_node) \
+	/* Instruction nodes */ \
+	AST_NODE_CLASS(unary_node) \
+	AST_NODE_CLASS(binary_instruction_node) \
+	AST_NODE_CLASS(ternary_instruction_node) \
+	AST_NODE_CLASS(quaternary_instruction_node) \
+	AST_NODE_CLASS(if_node) \
+	AST_NODE_CLASS(else_node) \
+	AST_NODE_CLASS(ret_node) \
+	AST_NODE_CLASS(negate_node) \
+	AST_NODE_CLASS(absolute_node) \
+	AST_NODE_CLASS(saturate_node) \
+	/* Rewritten expressions */ \
+	AST_NODE_CLASS(binary_op) \
+	AST_NODE_CLASS(add_node) \
+	AST_NODE_CLASS(sub_node) \
+	AST_NODE_CLASS(mul_node) \
+	AST_NODE_CLASS(div_node) \
+	AST_NODE_CLASS(assign_node)
 
-class constant_node;
-class global_index_node;
-class vector_node;
+#define AST_NODE_CLASS(klass) class klass;
+AST_NODE_CLASSES
+#undef AST_NODE_CLASS
 
-class mask_node;
-class swizzle_node;
-class scalar_node;
-class index_node;
-
-class comparison_node;
-
-class unary_node;
-class binary_node;
-class ternary_node;
-class quaternary_node;
+#define AST_NODE_CLASS(klass) klass,
+enum class node_type
+{
+	AST_NODE_CLASSES
+};
+#undef AST_NODE_CLASS
 
 class ast_visitor
 {
 public:
-	virtual void visit(ast_node* node) = 0;
-	virtual void visit(super_node* node) = 0;
+#define AST_NODE_CLASS(klass) \
+	virtual void visit(klass* node);
 
-	virtual void visit(index_node* node) = 0;
-	virtual void visit(mask_node* node) = 0;
-	virtual void visit(scalar_node* node) = 0;
-	virtual void visit(swizzle_node* node) = 0;
+	AST_NODE_CLASSES
 
-	virtual void visit(constant_node* node) = 0;
-	virtual void visit(global_index_node* node) = 0;
-	virtual void visit(vector_node* node) = 0;
-
-	virtual void visit(comparison_node* node) = 0;
-
-	virtual void visit(unary_node* node) = 0;
-	virtual void visit(binary_node* node) = 0;
-	virtual void visit(ternary_node* node) = 0;
-	virtual void visit(quaternary_node* node) = 0;
+#undef AST_NODE_CLASS
 };
 
 #define DECLARE_AST_NODE(node_name, base) \
 	typedef base base_class; \
 	virtual char const* get_type_string() { return #node_name; } \
+	virtual node_type get_type() { return node_type::node_name; } \
 	virtual void accept(ast_visitor& visitor) { visitor.visit(this); }
 
 #define DEFINE_DERIVED_AST_NODE(node_name, base) \
@@ -69,6 +89,8 @@ class ast_node
 {
 public:
 	virtual ~ast_node() {};
+	bool is_type(node_type type) { return this->get_type() == type; }
+
 	DECLARE_AST_NODE(ast_node, ast_node)
 };
 
@@ -81,8 +103,6 @@ public:
 	std::shared_ptr<super_node> parent;
 	std::vector<std::shared_ptr<ast_node>> children;
 };
-
-DEFINE_DERIVED_AST_NODE(root_node, super_node)
 
 // types
 class constant_node : public ast_node
@@ -123,7 +143,7 @@ public:
 	}
 
 	virtual ~global_index_node() {};
-	DECLARE_AST_NODE(register_node, ast_node)
+	DECLARE_AST_NODE(global_index_node, ast_node)
 
 	int64_t index;
 };
@@ -151,7 +171,7 @@ public:
 	virtual ~vector_node() {};
 	DECLARE_AST_NODE(vector_node, ast_node)
 
-	std::vector<std::shared_ptr<ast_node>> values; 
+	std::vector<std::shared_ptr<constant_node>> values; 
 };
 
 // indexing
@@ -222,73 +242,63 @@ public:
 	std::shared_ptr<ast_node> value;
 };
 
+// will leave these for later, they're not technically opcodes
 DEFINE_DERIVED_AST_NODE(negate_node, unary_node)
 DEFINE_DERIVED_AST_NODE(absolute_node, unary_node)
 DEFINE_DERIVED_AST_NODE(saturate_node, unary_node)
 
 // binary
-class binary_node : public ast_node
+class binary_instruction_node : public ast_node
 {
 public:
-	virtual ~binary_node() {};
-	DECLARE_AST_NODE(binary_node, ast_node)
+	virtual ~binary_instruction_node() {};
+	DECLARE_AST_NODE(binary_instruction_node, ast_node)
 
-	std::shared_ptr<ast_node> output;
+	uint8_t opcode;
 	std::shared_ptr<ast_node> input;
 };
 
-DEFINE_DERIVED_AST_NODE(frc_node, binary_node)
-DEFINE_DERIVED_AST_NODE(rsq_node, binary_node)
-DEFINE_DERIVED_AST_NODE(itof_node, binary_node)
-DEFINE_DERIVED_AST_NODE(ftoi_node, binary_node)
-DEFINE_DERIVED_AST_NODE(ftou_node, binary_node)
-DEFINE_DERIVED_AST_NODE(mov_node, binary_node)
-DEFINE_DERIVED_AST_NODE(round_ni_node, binary_node)
-DEFINE_DERIVED_AST_NODE(exp_node, binary_node)
-
 // ternary
-class ternary_node : public ast_node
+class ternary_instruction_node : public ast_node
 {
 public:
-	virtual ~ternary_node() {};
-	DECLARE_AST_NODE(ternary_node, ast_node)
+	virtual ~ternary_instruction_node() {};
+	DECLARE_AST_NODE(ternary_instruction_node, ast_node)
 
-	std::shared_ptr<ast_node> output;
+	uint8_t opcode;
 	std::shared_ptr<ast_node> lhs;
 	std::shared_ptr<ast_node> rhs;
 };
 
-DEFINE_DERIVED_AST_NODE(mul_node, ternary_node)
-DEFINE_DERIVED_AST_NODE(div_node, ternary_node)
-DEFINE_DERIVED_AST_NODE(add_node, ternary_node)
-DEFINE_DERIVED_AST_NODE(dp3_node, ternary_node)
-DEFINE_DERIVED_AST_NODE(dp4_node, ternary_node)
-DEFINE_DERIVED_AST_NODE(ishl_node, ternary_node)
-DEFINE_DERIVED_AST_NODE(ushr_node, ternary_node)
-DEFINE_DERIVED_AST_NODE(and_node, ternary_node)
-DEFINE_DERIVED_AST_NODE(or_node, ternary_node)
-DEFINE_DERIVED_AST_NODE(iadd_node, ternary_node)
-DEFINE_DERIVED_AST_NODE(ieq_node, ternary_node)
-DEFINE_DERIVED_AST_NODE(ge_node, ternary_node)
-DEFINE_DERIVED_AST_NODE(max_node, ternary_node)
-DEFINE_DERIVED_AST_NODE(min_node, ternary_node)
-DEFINE_DERIVED_AST_NODE(lt_node, ternary_node)
-
 // quaternary
-class quaternary_node : public ast_node
+class quaternary_instruction_node : public ast_node
 {
 public:
-	virtual ~quaternary_node() {};
-	DECLARE_AST_NODE(quaternary_node, ast_node)
+	virtual ~quaternary_instruction_node() {};
+	DECLARE_AST_NODE(quaternary_instruction_node, ast_node)
 
-	std::shared_ptr<ast_node> output;
+	uint8_t opcode;
 	std::shared_ptr<ast_node> lhs;
 	std::shared_ptr<ast_node> rhs1;
 	std::shared_ptr<ast_node> rhs2;
 };
 
-DEFINE_DERIVED_AST_NODE(mad_node, quaternary_node)
-DEFINE_DERIVED_AST_NODE(movc_node, quaternary_node)
+// fun stuff! actual operators!
+class binary_op : public ast_node
+{
+public:
+	virtual ~binary_op() {}
+	DECLARE_AST_NODE(binary_op, ast_node)
+
+	std::shared_ptr<ast_node> lhs;
+	std::shared_ptr<ast_node> rhs;
+};
+
+DEFINE_DERIVED_AST_NODE(add_node, binary_op)
+DEFINE_DERIVED_AST_NODE(sub_node, binary_op)
+DEFINE_DERIVED_AST_NODE(mul_node, binary_op)
+DEFINE_DERIVED_AST_NODE(div_node, binary_op)
+DEFINE_DERIVED_AST_NODE(assign_node, binary_op)
 
 std::shared_ptr<super_node> decompile(program const* p);
 
