@@ -4,14 +4,6 @@
 
 namespace sm4 {
 
-template <typename T>
-std::shared_ptr<variable_node<T>> make_variable_node(T value)
-{
-	auto node = std::make_shared<variable_node<T>>();
-	node->value = value;
-	return node;
-}
-
 // decompile
 std::shared_ptr<ast_node> decompile_operand(sm4::operand const* operand, sm4_opcode_type opcode_type)
 {
@@ -22,29 +14,47 @@ std::shared_ptr<ast_node> decompile_operand(sm4::operand const* operand, sm4_opc
 		auto new_node = std::make_shared<vector_node>();
 		for (unsigned int i = 0; i < operand->comps; ++i)
 		{
-			std::shared_ptr<ast_node> variable_node;
+			auto var_node = std::make_shared<constant_node>();
 			auto const& value = operand->imm_values[i];
 
 			if (operand->file == SM4_FILE_IMMEDIATE32)
 			{
 				if (opcode_type == SM4_OPCODE_TYPE_INT)
-					variable_node = make_variable_node(value.i32);
+				{
+					var_node->current_type = constant_node::type::i32;
+					var_node->i32 = value.i32;
+				}
 				else if (opcode_type == SM4_OPCODE_TYPE_UINT)
-					variable_node = make_variable_node(value.u32);
+				{
+					var_node->current_type = constant_node::type::u32;
+					var_node->u32 = value.u32;
+				}
 				else
-					variable_node = make_variable_node(value.f32);
+				{
+					var_node->current_type = constant_node::type::f32;
+					var_node->f32 = value.f32;
+				}
 			}
 			else
 			{
 				if (opcode_type == SM4_OPCODE_TYPE_INT)
-					variable_node = make_variable_node(value.i64);
+				{
+					var_node->current_type = constant_node::type::i64;
+					var_node->i64 = value.i64;
+				}
 				else if (opcode_type == SM4_OPCODE_TYPE_UINT)
-					variable_node = make_variable_node(value.u64);
+				{
+					var_node->current_type = constant_node::type::u64;
+					var_node->u64 = value.u64;
+				}
 				else
-					variable_node = make_variable_node(value.f64);
+				{
+					var_node->current_type = constant_node::type::f64;
+					var_node->f64 = value.f64;
+				}
 			}
 
-			new_node->values.push_back(variable_node);
+			new_node->values.push_back(var_node);
 		}
 		node = new_node;
 		return node;

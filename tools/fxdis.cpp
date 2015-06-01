@@ -26,7 +26,7 @@
 
 #include "dxbc.h"
 #include "sm4.h"
-#include "sm4_decompile.h"
+#include "sm4_dump_visitor.h"
 
 #include <iostream>
 #include <fstream>
@@ -131,7 +131,10 @@ int main(int argc, char** argv)
 	{
 		auto root_node = sm4::decompile(sm4_p.get());
 		if (dump_ast)
-			std::cout << root_node->dump().serialize(true);
+		{
+			sm4::dump_visitor visitor(std::cout);
+			root_node->accept(visitor);
+		}
 	}
 	else
 	{
