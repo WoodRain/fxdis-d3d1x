@@ -80,17 +80,19 @@ std::shared_ptr<ast_node> decompile_operand(sm4::operand const* operand, sm4_opc
 			auto indexing_node = std::make_shared<index_node>();
 			indexing_node->index = decompile_operand(
 				operand->indices[0].reg.get(), opcode_type);
-			indexing_node->value = node;
+			indexing_node->value = std::static_pointer_cast<global_index_node>(node);
 			node = indexing_node;
 		}
 	}
 	
 	if (operand->comps)
 	{
+		auto gi_node = std::static_pointer_cast<global_index_node>(node);
+
 		if (operand->mode == SM4_OPERAND_MODE_MASK && operand->mask)
 		{
 			auto parent_node = std::make_shared<mask_node>();
-			parent_node->value = node;
+			parent_node->value = gi_node;
 
 			for (unsigned int i = 0; i < operand->comps; ++i)
 			{
@@ -103,7 +105,7 @@ std::shared_ptr<ast_node> decompile_operand(sm4::operand const* operand, sm4_opc
 		else if (operand->mode == SM4_OPERAND_MODE_SWIZZLE)
 		{
 			auto parent_node = std::make_shared<swizzle_node>();
-			parent_node->value = node;
+			parent_node->value = gi_node;
 
 			for (unsigned int i = 0; i < operand->comps; ++i)
 				parent_node->indices.push_back(operand->swizzle[i]);
@@ -113,7 +115,7 @@ std::shared_ptr<ast_node> decompile_operand(sm4::operand const* operand, sm4_opc
 		else if (operand->mode == SM4_OPERAND_MODE_SCALAR)
 		{
 			auto parent_node = std::make_shared<scalar_node>();
-			parent_node->value = node;
+			parent_node->value = gi_node;
 			parent_node->index = operand->swizzle[0];
 
 			node = parent_node;

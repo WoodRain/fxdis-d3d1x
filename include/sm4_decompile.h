@@ -78,8 +78,8 @@ public:
 
 #define DECLARE_AST_NODE(node_name, base) \
 	typedef base base_class; \
-	virtual char const* get_type_string() { return #node_name; } \
-	virtual node_type get_type() { return node_type::node_name; } \
+	virtual char const* get_type_string() const { return #node_name; } \
+	virtual node_type get_type() const { return node_type::node_name; } \
 	virtual void accept(ast_visitor& visitor) { visitor.visit(this); }
 
 #define DEFINE_DERIVED_AST_NODE(node_name, base) \
@@ -89,7 +89,7 @@ class ast_node
 {
 public:
 	virtual ~ast_node() {};
-	bool is_type(node_type type) { return this->get_type() == type; }
+	bool is_type(node_type type) const { return this->get_type() == type; }
 
 	DECLARE_AST_NODE(ast_node, ast_node)
 };
@@ -184,6 +184,10 @@ public:
 	DECLARE_AST_NODE(global_index_node, ast_node)
 
 	int64_t index;
+	bool operator==(global_index_node const& rhs) const
+	{
+		return rhs.is_type(this->get_type()) && this->index == rhs.index;
+	}
 };
 
 #define DEFINE_DERIVED_GLOBAL_INDEX_NODE(node_name) \
@@ -219,8 +223,13 @@ public:
 	virtual ~mask_node() {};
 	DECLARE_AST_NODE(mask_node, ast_node)
 
-	std::shared_ptr<ast_node> value;
+	std::shared_ptr<global_index_node> value;
 	std::vector<uint8_t> indices;
+
+	bool operator==(mask_node const& rhs) const
+	{
+		return *this->value == *rhs.value && this->indices == rhs.indices;
+	}
 };
 
 class swizzle_node : public ast_node
@@ -229,8 +238,13 @@ public:
 	virtual ~swizzle_node() {};
 	DECLARE_AST_NODE(swizzle_node, ast_node)
 
-	std::shared_ptr<ast_node> value;
+	std::shared_ptr<global_index_node> value;
 	std::vector<uint8_t> indices;
+
+	bool operator==(swizzle_node const& rhs) const
+	{
+		return *this->value == *rhs.value && this->indices == rhs.indices;
+	}
 };
 
 class scalar_node : public ast_node
@@ -239,8 +253,13 @@ public:
 	virtual ~scalar_node() {};
 	DECLARE_AST_NODE(scalar_node, ast_node)
 
-	std::shared_ptr<ast_node> value;
+	std::shared_ptr<global_index_node> value;
 	uint8_t index;
+
+	bool operator==(scalar_node const& rhs) const
+	{
+		return *this->value == *rhs.value && this->index == rhs.index;
+	}
 };
 
 class index_node : public ast_node
@@ -250,7 +269,7 @@ public:
 	DECLARE_AST_NODE(index_node, ast_node)
 
 	std::shared_ptr<ast_node> index;
-	std::shared_ptr<ast_node> value;
+	std::shared_ptr<global_index_node> value;
 };
 
 // comparison
