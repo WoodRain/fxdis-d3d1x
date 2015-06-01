@@ -42,7 +42,7 @@
     <ClCompile Include="src\sm4_decompile.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="sm4_ast_to_json.cpp">
+    <ClCompile Include="src\sm4_ast_to_json.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

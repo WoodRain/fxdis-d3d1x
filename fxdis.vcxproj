@@ -89,10 +89,10 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="sm4_ast_to_json.cpp" />
     <ClCompile Include="src\dxbc_assemble.cpp" />
     <ClCompile Include="src\dxbc_dump.cpp" />
     <ClCompile Include="src\dxbc_parse.cpp" />
+    <ClCompile Include="src\sm4_ast_to_json.cpp" />
     <ClCompile Include="src\sm4_decompile.cpp" />
     <ClCompile Include="tools\fxdis.cpp" />
     <ClCompile Include="src\sm4_analyze.cpp" />
