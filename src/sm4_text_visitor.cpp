@@ -170,6 +170,22 @@ void text_visitor::visit(comparison_node* node)
 	write_newline();
 }
 
+void text_visitor::visit(function_call_node* node)
+{
+	stream_ << node->name << "(";
+	
+	bool first = true;
+	for (auto argument : node->arguments)
+	{
+		if (!first)
+			stream_ << ", ";
+		argument->accept(*this);
+		first = false;
+	}
+
+	stream_ << ")";
+}
+
 void text_visitor::visit(unary_node* node)
 {	
 	stream_ << sanitized_node_type(node) << "(";
@@ -215,13 +231,6 @@ void text_visitor::visit(negate_node* node)
 {	
 	stream_ << "-";
 	node->value->accept(*this);
-}
-
-void text_visitor::visit(absolute_node* node)
-{	
-	stream_ << "abs(";
-	node->value->accept(*this);
-	stream_ << ")";
 }
 
 void text_visitor::visit(add_node* node)

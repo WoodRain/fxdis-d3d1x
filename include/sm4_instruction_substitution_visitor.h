@@ -7,6 +7,7 @@ class instruction_substitution_visitor : public recursive_visitor
 {
 public:
 	virtual void visit(binary_op* node);
+	virtual void visit(function_call_node* node);
 };
 
 }

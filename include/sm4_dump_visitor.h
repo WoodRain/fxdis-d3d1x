@@ -26,6 +26,8 @@ public:
 
 	virtual void visit(comparison_node* node);
 
+	virtual void visit(function_call_node* node);
+
 	virtual void visit(unary_node* node);
 	virtual void visit(binary_instruction_node* node);
 	virtual void visit(ternary_instruction_node* node);

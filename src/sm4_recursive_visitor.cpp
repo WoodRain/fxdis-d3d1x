@@ -57,6 +57,12 @@ void recursive_visitor::visit(comparison_node* node)
 		child->accept(*this);
 }
 
+void recursive_visitor::visit(function_call_node* node)
+{
+	for (auto arg : node->arguments)
+		arg->accept(*this);
+}
+
 void recursive_visitor::visit(unary_node* node)
 {
 	node->value->accept(*this);

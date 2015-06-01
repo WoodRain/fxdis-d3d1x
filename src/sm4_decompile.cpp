@@ -123,11 +123,7 @@ std::shared_ptr<ast_node> decompile_operand(sm4::operand const* operand, sm4_opc
 	}
 
 	if (operand->abs)
-	{
-		auto parent_node = std::make_shared<absolute_node>();
-		parent_node->value = node;
-		node = parent_node;
-	}
+		node = std::make_shared<function_call_node>("abs", node);
 
 	if (operand->neg)
 	{
@@ -167,11 +163,7 @@ std::shared_ptr<T> decompile_unary(sm4::instruction const* instruction)
 std::shared_ptr<ast_node> saturate_if_necessary(sm4::instruction const* instruction, std::shared_ptr<ast_node> node)
 {
 	if (instruction->insn.sat)
-	{
-		auto sat_node = std::make_shared<saturate_node>();
-		sat_node->value = node;
-		return sat_node;
-	}
+		return std::make_shared<function_call_node>("saturate", node);
 
 	return node;
 }

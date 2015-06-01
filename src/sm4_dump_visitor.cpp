@@ -1,6 +1,7 @@
 #include "sm4_dump_visitor.h"
 #include "sm4.h"
 #include <iostream>
+#include <string>
 
 namespace sm4 {
 
@@ -148,6 +149,18 @@ void dump_visitor::visit(comparison_node* node)
 
 	++depth_;
 	node->value->accept(*this);
+	--depth_;
+}
+
+void dump_visitor::visit(function_call_node* node)
+{
+	write_spaces();
+	stream_ << node->get_type_string() << " (" << node->name << ')';
+	write_newline();
+
+	++depth_;
+	for (auto arg : node->arguments)
+		arg->accept(*this);
 	--depth_;
 }
 

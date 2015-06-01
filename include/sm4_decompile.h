@@ -28,6 +28,8 @@ typedef sm4_op operand;
 	AST_NODE_CLASS(immediate_constant_buffer_node) \
 	AST_NODE_CLASS(input_node) \
 	AST_NODE_CLASS(output_node) \
+	/* Function calls */ \
+	AST_NODE_CLASS(function_call_node) \
 	/* Indexing */ \
 	AST_NODE_CLASS(mask_node) \
 	AST_NODE_CLASS(swizzle_node) \
@@ -44,8 +46,6 @@ typedef sm4_op operand;
 	AST_NODE_CLASS(else_node) \
 	AST_NODE_CLASS(ret_node) \
 	AST_NODE_CLASS(negate_node) \
-	AST_NODE_CLASS(absolute_node) \
-	AST_NODE_CLASS(saturate_node) \
 	/* Rewritten expressions */ \
 	AST_NODE_CLASS(binary_op) \
 	AST_NODE_CLASS(add_node) \
@@ -272,6 +272,40 @@ public:
 	std::shared_ptr<global_index_node> value;
 };
 
+// function call
+class function_call_node : public ast_node
+{
+public:
+	function_call_node() {}
+
+	template<typename... Args> inline void pass(Args&&...) {}
+
+	template <typename... Values>
+	function_call_node(std::string name, Values&&... args) :
+		name(name)
+	{
+		this->push_back(args...);
+	}
+
+	void push_back(std::shared_ptr<ast_node> node)
+	{
+		this->arguments.push_back(node);
+	}
+
+	template <typename Value, typename... Values>
+	void push_back(Value&& arg, Values&&... args)
+	{
+		push_back(arg);
+		push_back(args...);
+	}
+
+	virtual ~function_call_node() {};
+	DECLARE_AST_NODE(function_call_node, ast_node)
+
+	std::string name;
+	std::vector<std::shared_ptr<ast_node>> arguments;
+};
+
 // comparison
 class comparison_node : public super_node
 {
@@ -299,10 +333,7 @@ public:
 	std::shared_ptr<ast_node> value;
 };
 
-// will leave these for later, they're not technically opcodes
 DEFINE_DERIVED_AST_NODE(negate_node, unary_node)
-DEFINE_DERIVED_AST_NODE(absolute_node, unary_node)
-DEFINE_DERIVED_AST_NODE(saturate_node, unary_node)
 
 // binary
 class binary_instruction_node : public ast_node

@@ -179,4 +179,13 @@ void instruction_substitution_visitor::visit(binary_op* node)
 	node->rhs->accept(*this);
 }
 
+void instruction_substitution_visitor::visit(function_call_node* node)
+{
+	for (auto& arg : node->arguments)
+	{
+		rewrite_node(arg);
+		arg->accept(*this);
+	}
+}
+
 }
