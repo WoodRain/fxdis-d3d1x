@@ -289,4 +289,22 @@ std::shared_ptr<super_node> decompile(program const* p)
 
 #undef AST_NODE_CLASS
 
+bool index_equal(ast_node const* lhs, ast_node const* rhs)
+{
+#define HANDLE_TYPE(type) \
+	if (lhs->is_type(rhs->get_type())) \
+	{ \
+		if (*static_cast<type const*>(lhs) == *static_cast<type const*>(rhs)) \
+			return true; \
+	}
+
+	HANDLE_TYPE(mask_node)
+	HANDLE_TYPE(swizzle_node)
+	HANDLE_TYPE(scalar_node)
+
+#undef HANDLE_TYPE
+
+	return false;
+}
+
 }

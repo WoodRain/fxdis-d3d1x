@@ -157,6 +157,30 @@ void rewrite_swizzle_node(std::shared_ptr<ast_node>& node)
 		node = new_node;
 	}
 }
+
+void rewrite_function_call_node(std::shared_ptr<ast_node>& node)
+{
+	auto old_fc_node = std::static_pointer_cast<function_call_node>(node);
+
+	// rewrite rsqrt(dot(x, x)) to length(x)
+	if (old_fc_node->name == "rsqrt")
+	{
+		auto argument_node = old_fc_node->arguments.front();
+		if (argument_node->is_type(node_type::function_call_node))
+		{
+			auto nested_fc_node = std::static_pointer_cast<function_call_node>(argument_node);
+
+			if (nested_fc_node->name == "dot")
+			{
+				auto argument1 = nested_fc_node->arguments[0];
+				auto argument2 = nested_fc_node->arguments[1];
+
+				if (index_equal(argument1.get(), argument2.get()))
+					node = std::make_shared<function_call_node>("length", argument1);
+			}
+		}
+	}
+}
 	
 void rewrite_node(std::shared_ptr<ast_node>& node)
 {
@@ -177,6 +201,9 @@ void rewrite_node(std::shared_ptr<ast_node>& node)
 
 	if (node->is_type(node_type::swizzle_node))
 		rewrite_swizzle_node(node);
+
+	if (node->is_type(node_type::function_call_node))
+		rewrite_function_call_node(node);
 }
 
 void rewrite_visitor::visit(binary_op* node)

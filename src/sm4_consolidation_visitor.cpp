@@ -19,20 +19,13 @@ void consolidation_visitor::visit(super_node* node)
 		{
 			auto lhs = last_node->lhs;
 
-#define HANDLE_TYPE(type) \
-	if (node->is_type(node_type::type) && lhs->is_type(node_type::type)) \
-	{ \
-		auto casted_node = std::static_pointer_cast<type>(node); \
-		auto casted_lhs = std::static_pointer_cast<type>(lhs); \
-		if (*casted_node == *casted_lhs) \
-		{ \
-			node = last_node->rhs; \
-			this->rewrote = true; \
-		} \
-	}
-			HANDLE_TYPE(swizzle_node)
-			HANDLE_TYPE(scalar_node)
-			HANDLE_TYPE(mask_node)
+			// if the last node's lhs is equal to this node,
+			// replace the node with the last node's rhs
+			if (index_equal(last_node->lhs.get(), node.get()))
+			{
+				node = last_node->rhs;
+				this->rewrote = true;
+			}
 		}
 
 		virtual void visit(unary_node* node)

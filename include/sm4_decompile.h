@@ -262,6 +262,10 @@ public:
 	}
 };
 
+// todo: clean up, I feel like I'm writing PHP here
+// checks whether lhs and rhs are equal, assuming they're one of the three index operators
+bool index_equal(ast_node const* lhs, ast_node const* rhs);
+
 class index_node : public ast_node
 {
 public:
