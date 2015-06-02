@@ -38,6 +38,8 @@ public:
 	virtual void visit(sub_expr_node* node);
 	virtual void visit(mul_expr_node* node);
 	virtual void visit(div_expr_node* node);
+	virtual void visit(eq_expr_node* node);
+	virtual void visit(neq_expr_node* node);
 
 	text_visitor operator=(text_visitor const& rhs) = delete;
 

@@ -143,23 +143,6 @@ std::shared_ptr<ast_node> decompile_operand(sm4::instruction const* instruction,
 	return decompile_operand(operand, opcode_type);
 }
 
-template <typename T>
-std::shared_ptr<T> decompile_nullary(sm4::instruction const* instruction)
-{
-	auto node = std::make_shared<T>();
-
-	return node;
-}
-
-template <typename T>
-std::shared_ptr<T> decompile_unary(sm4::instruction const* instruction)
-{
-	auto node = std::make_shared<T>();
-	node->value = decompile_operand(instruction, 0);
-
-	return node;
-}
-
 std::shared_ptr<ast_node> saturate_if_necessary(sm4::instruction const* instruction, std::shared_ptr<ast_node> node)
 {
 	if (instruction->insn.sat)
@@ -178,7 +161,18 @@ std::shared_ptr<super_node> decompile(program const* p)
 		{
 		case SM4_OPCODE_IF:
 		{
-			auto node = decompile_unary<if_node>(instruction);
+			auto node = std::make_shared<if_node>();
+			auto comparand = decompile_operand(instruction, 0);
+
+			std::shared_ptr<binary_expr_node> expression;
+			auto rhs = std::make_shared<vector_node>(0.0f);
+
+			if (instruction->insn.test_nz)
+				expression = std::make_shared<neq_expr_node>(comparand, rhs);
+			else
+				expression = std::make_shared<eq_expr_node>(comparand, rhs);
+
+			node->expression = expression;
 			node->parent = root;
 			node->parent->children.push_back(node);
 			root = node;
@@ -187,7 +181,7 @@ std::shared_ptr<super_node> decompile(program const* p)
 		
 		case SM4_OPCODE_ELSE:
 		{
-			auto node = decompile_nullary<else_node>(instruction);
+			auto node = std::make_shared<else_node>();
 			node->parent = root->parent;
 			node->parent->children.push_back(node);
 			root = node;
@@ -199,7 +193,7 @@ std::shared_ptr<super_node> decompile(program const* p)
 			break;
 
 		case SM4_OPCODE_RET:
-			root->children.push_back(decompile_nullary<ret_node>(instruction));
+			root->children.push_back(std::make_shared<ret_node>());
 			break;
 
 		case SM4_OPCODE_FRC:

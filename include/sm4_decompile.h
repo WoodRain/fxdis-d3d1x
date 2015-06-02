@@ -52,7 +52,9 @@ typedef sm4_op operand;
 	AST_NODE_CLASS(add_expr_node) \
 	AST_NODE_CLASS(sub_expr_node) \
 	AST_NODE_CLASS(mul_expr_node) \
-	AST_NODE_CLASS(div_expr_node)
+	AST_NODE_CLASS(div_expr_node) \
+	AST_NODE_CLASS(eq_expr_node) \
+	AST_NODE_CLASS(neq_expr_node) \
 
 #define AST_NODE_CLASS(klass) class klass;
 AST_NODE_CLASSES
@@ -437,8 +439,7 @@ public:
 	virtual ~comparison_node() {};
 	DECLARE_AST_NODE(comparison_node, super_node)
 
-	std::shared_ptr<ast_node> value;
-	bool not_zero;
+	std::shared_ptr<ast_node> expression;
 
 	virtual bool operator==(ast_node const& rhs) 
 	{ 
@@ -447,8 +448,7 @@ public:
 
 		auto typed_rhs = static_cast<comparison_node const&>(rhs);
 
-		return	(*this->value == *typed_rhs.value) &&
-				(this->not_zero == typed_rhs.not_zero);
+		return	(*this->expression == *typed_rhs.expression);
 	}
 };
 
@@ -632,6 +632,9 @@ DEFINE_DERIVED_BINARY_EXPR_NODE(add_expr_node)
 DEFINE_DERIVED_BINARY_EXPR_NODE(sub_expr_node)
 DEFINE_DERIVED_BINARY_EXPR_NODE(mul_expr_node)
 DEFINE_DERIVED_BINARY_EXPR_NODE(div_expr_node)
+DEFINE_DERIVED_BINARY_EXPR_NODE(eq_expr_node)
+DEFINE_DERIVED_BINARY_EXPR_NODE(neq_expr_node)
+
 
 std::shared_ptr<super_node> decompile(program const* p);
 

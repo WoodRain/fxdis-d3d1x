@@ -129,11 +129,11 @@ void dump_visitor::visit(vector_node* node)
 void dump_visitor::visit(comparison_node* node)
 {
 	write_spaces();
-	stream_ << node->get_type_string() << " (nz: " << node->not_zero << ")";
+	stream_ << node->get_type_string();
 	write_newline();
 
 	++depth_;
-	node->value->accept(*this);
+	node->expression->accept(*this);
 	for (auto child : node->children)
 		child->accept(*this);
 	--depth_;

@@ -143,10 +143,8 @@ void text_visitor::visit(comparison_node* node)
 {
 	write_spaces();
 	stream_ << sanitized_node_type(node) << " (";
-	node->value->accept(*this);
-	// lol operator precedence
-	// don't overload operators with stupid precedence, god damn it C++
-	stream_ << (node->not_zero ? " != 0" : " == 0") << ")";
+	node->expression->accept(*this);
+	stream_ << ")";
 	write_newline();
 
 	write_spaces();
@@ -274,6 +272,20 @@ void text_visitor::visit(div_expr_node* node)
 
 	if (requires_brackets(node->rhs))
 		stream_ << ")";
+}
+
+void text_visitor::visit(eq_expr_node* node)
+{
+	node->lhs->accept(*this);
+	stream_ << " == ";
+	node->rhs->accept(*this);
+}
+
+void text_visitor::visit(neq_expr_node* node)
+{
+	node->lhs->accept(*this);
+	stream_ << " != ";
+	node->rhs->accept(*this);
 }
 
 }

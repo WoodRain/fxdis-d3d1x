@@ -47,7 +47,7 @@ void recursive_visitor::visit(vector_node* node)
 
 void recursive_visitor::visit(comparison_node* node)
 {
-	node->value->accept(*this);
+	node->expression->accept(*this);
 	
 	this->visit(static_cast<comparison_node::base_class*>(node));
 }
