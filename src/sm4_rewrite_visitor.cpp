@@ -117,6 +117,24 @@ void rewrite_add_expr_node(std::shared_ptr<ast_node>& node)
 
 		node = new_node;
 	}
+	// rewrite a + a to 2 * a
+	else if (old_add_expr_node->lhs == old_add_expr_node->rhs)
+	{
+		auto new_mul_node = std::make_shared<mul_expr_node>();
+
+		auto new_vector_node = std::make_shared<vector_node>();
+		
+		auto new_constant_node = std::make_shared<constant_node>();
+		new_constant_node->f32 = 2.0f;
+		new_constant_node->current_type = constant_node::type::f32;
+
+		new_vector_node->values.push_back(new_constant_node);
+
+		new_mul_node->lhs = new_vector_node;
+		new_mul_node->rhs = old_add_expr_node->lhs;
+
+		node = new_mul_node;
+	}
 }
 
 void rewrite_mask_node(std::shared_ptr<ast_node>& node)
