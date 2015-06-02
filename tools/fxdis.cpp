@@ -30,7 +30,7 @@
 #include "sm4_dump_visitor.h"
 #include "sm4_text_visitor.h"
 #include "sm4_rewrite_visitor.h"
-#include "sm4_consolidation_visitor.h"
+#include "sm4_consolidate_visitor.h"
 
 #include <iostream>
 #include <fstream>
@@ -142,7 +142,7 @@ int main(int argc, char** argv)
 		
 		if (process)
 		{
-			sm4::consolidation_visitor cons_visitor;
+			sm4::consolidate_visitor cons_visitor;
 			sm4::rewrite_visitor sub_visitor;
 
 			// pass 1

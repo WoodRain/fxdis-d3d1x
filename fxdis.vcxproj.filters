@@ -51,10 +51,10 @@
     <ClCompile Include="src\sm4_recursive_visitor.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\sm4_consolidation_visitor.cpp">
+    <ClCompile Include="src\sm4_rewrite_visitor.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\sm4_rewrite_visitor.cpp">
+    <ClCompile Include="src\sm4_consolidate_visitor.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -86,10 +86,10 @@
     <ClInclude Include="include\sm4_recursive_visitor.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="include\sm4_consolidation_visitor.h">
+    <ClInclude Include="include\sm4_rewrite_visitor.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="include\sm4_rewrite_visitor.h">
+    <ClInclude Include="include\sm4_consolidate_visitor.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

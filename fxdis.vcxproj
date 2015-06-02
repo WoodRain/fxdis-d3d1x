@@ -92,7 +92,7 @@
     <ClCompile Include="src\dxbc_assemble.cpp" />
     <ClCompile Include="src\dxbc_dump.cpp" />
     <ClCompile Include="src\dxbc_parse.cpp" />
-    <ClCompile Include="src\sm4_consolidation_visitor.cpp" />
+    <ClCompile Include="src\sm4_consolidate_visitor.cpp" />
     <ClCompile Include="src\sm4_dump_visitor.cpp" />
     <ClCompile Include="src\sm4_decompile.cpp" />
     <ClCompile Include="src\sm4_rewrite_visitor.cpp" />
@@ -108,7 +108,7 @@
     <ClInclude Include="include\dxbc.h" />
     <ClInclude Include="include\le32.h" />
     <ClInclude Include="include\sm4.h" />
-    <ClInclude Include="include\sm4_consolidation_visitor.h" />
+    <ClInclude Include="include\sm4_consolidate_visitor.h" />
     <ClInclude Include="include\sm4_dump_visitor.h" />
     <ClInclude Include="include\sm4_decompile.h" />
     <ClInclude Include="include\sm4_defs.h" />

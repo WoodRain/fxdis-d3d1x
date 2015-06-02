@@ -1,4 +1,4 @@
-#include "sm4_consolidation_visitor.h"
+#include "sm4_consolidate_visitor.h"
 #include "sm4.h"
 #include <iostream>
 #include <string>
@@ -6,7 +6,7 @@
 
 namespace sm4 {
 
-void consolidation_visitor::visit(super_node* node)
+void consolidate_visitor::visit(super_node* node)
 {
 	if (node->children.empty())
 		return;
