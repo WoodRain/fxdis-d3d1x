@@ -214,6 +214,13 @@ void rewrite_node(std::shared_ptr<ast_node>& node)
 		rewrite_function_call_expr_node(node);
 }
 
+void rewrite_visitor::visit(unary_node* node)
+{
+	rewrite_node(node->value);
+
+	node->value->accept(*this);
+}
+
 void rewrite_visitor::visit(binary_expr_node* node)
 {
 	rewrite_node(node->lhs);
