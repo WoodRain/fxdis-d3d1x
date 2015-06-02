@@ -157,6 +157,13 @@ void rewrite_swizzle_node(std::shared_ptr<ast_node>& node)
 
 	if (same)
 		indices.assign(1, first_index);
+
+	// if the first and last index are the same, drop the last one
+	// xyzx -> xyz
+	if (indices.size() > 1 && (indices.front() == indices.back()))
+	{
+		indices.pop_back();
+	}
 }
 
 void rewrite_scalar_node(std::shared_ptr<ast_node>& node)
@@ -183,10 +190,10 @@ void rewrite_function_call_expr_node(std::shared_ptr<ast_node>& node)
 		{
 			if (nested_fc_node->name == "dot")
 			{
-				auto argument1 = node_cast<swizzle_node>(nested_fc_node->arguments[0]);
-				auto argument2 = node_cast<swizzle_node>(nested_fc_node->arguments[1]);
+				auto argument1 = nested_fc_node->arguments[0];
+				auto argument2 = nested_fc_node->arguments[1];
 
-				if (argument1 && argument2 && (*argument1 == *argument2))
+				if (*argument1 == *argument2)
 					node = std::make_shared<function_call_expr_node>("length", argument1);
 			}
 		}

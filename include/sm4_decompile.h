@@ -92,6 +92,11 @@ public:
 	virtual ~ast_node() {};
 	bool is_type(node_type type) const { return this->get_type() == type; }
 
+	virtual bool operator==(ast_node const&) 
+	{ 
+		return false; 
+	}
+
 	DECLARE_AST_NODE(ast_node, ast_node)
 };
 
@@ -118,6 +123,17 @@ public:
 
 	std::shared_ptr<super_node> parent;
 	std::vector<std::shared_ptr<ast_node>> children;
+
+	virtual bool operator==(ast_node const& rhs) 
+	{ 
+		if (!rhs.is_type(this->get_type()))
+			return false;
+
+		auto typed_rhs = static_cast<super_node const&>(rhs);
+
+		return	(*this->parent == *typed_rhs.parent) && 
+				(this->children == typed_rhs.children);
+	}
 };
 
 // types
@@ -186,6 +202,32 @@ public:
 			return true;
 		}
 	}
+
+	bool is_64bit()
+	{
+		switch (this->current_type)
+		{
+		case type::f32:
+		case type::i32:
+		case type::f64:
+			return false;
+		default:
+			return true;
+		}
+	}
+
+	virtual bool operator==(ast_node const& rhs) 
+	{ 
+		if (!rhs.is_type(this->get_type()))
+			return false;
+
+		auto typed_rhs = static_cast<constant_node const&>(rhs);
+
+		return	(this->current_type == typed_rhs.current_type) && 
+				this->is_64bit() ? 
+					(this->u64 == typed_rhs.u64) : 
+					(this->u32 == typed_rhs.u32);
+	}
 };
 
 class global_variable_node : public ast_node
@@ -200,9 +242,15 @@ public:
 	DECLARE_AST_NODE(global_variable_node, ast_node)
 
 	int64_t index;
-	bool operator==(global_variable_node const& rhs) const
-	{
-		return rhs.is_type(this->get_type()) && this->index == rhs.index;
+
+	virtual bool operator==(ast_node const& rhs) 
+	{ 
+		if (!rhs.is_type(this->get_type()))
+			return false;
+
+		auto typed_rhs = static_cast<global_variable_node const&>(rhs);
+
+		return	(this->index == typed_rhs.index);
 	}
 };
 
@@ -230,6 +278,16 @@ public:
 	DECLARE_AST_NODE(vector_node, ast_node)
 
 	std::vector<std::shared_ptr<constant_node>> values; 
+
+	virtual bool operator==(ast_node const& rhs) 
+	{ 
+		if (!rhs.is_type(this->get_type()))
+			return false;
+
+		auto typed_rhs = static_cast<vector_node const&>(rhs);
+
+		return	(this->values == typed_rhs.values);
+	}
 };
 
 // indexing
@@ -240,6 +298,16 @@ public:
 	DECLARE_AST_NODE(variable_access_node, ast_node)
 
 	std::shared_ptr<global_variable_node> value;
+
+	virtual bool operator==(ast_node const& rhs) 
+	{ 
+		if (!rhs.is_type(this->get_type()))
+			return false;
+
+		auto typed_rhs = static_cast<variable_access_node const&>(rhs);
+
+		return	(*this->value == *typed_rhs.value);
+	}
 };
 
 class mask_node : public variable_access_node
@@ -249,6 +317,17 @@ public:
 	DECLARE_AST_NODE(mask_node, variable_access_node)
 
 	std::vector<uint8_t> indices;
+
+	virtual bool operator==(ast_node const& rhs) 
+	{ 
+		if (!rhs.is_type(this->get_type()))
+			return false;
+
+		auto typed_rhs = static_cast<mask_node const&>(rhs);
+
+		return	(*this->value == *typed_rhs.value) && 
+				(this->indices == typed_rhs.indices);
+	}
 };
 
 class swizzle_node : public variable_access_node
@@ -259,10 +338,15 @@ public:
 
 	std::vector<uint8_t> indices;
 
-	bool operator==(swizzle_node const& rhs) const
-	{
-		return	(*this->value == *rhs.value) && 
-				(this->indices == rhs.indices);
+	virtual bool operator==(ast_node const& rhs) 
+	{ 
+		if (!rhs.is_type(this->get_type()))
+			return false;
+
+		auto typed_rhs = static_cast<swizzle_node const&>(rhs);
+
+		return	(*this->value == *typed_rhs.value) && 
+				(this->indices == typed_rhs.indices);
 	}
 };
 
@@ -273,6 +357,17 @@ public:
 	DECLARE_AST_NODE(scalar_node, variable_access_node)
 
 	uint8_t index;
+
+	virtual bool operator==(ast_node const& rhs) 
+	{ 
+		if (!rhs.is_type(this->get_type()))
+			return false;
+
+		auto typed_rhs = static_cast<scalar_node const&>(rhs);
+
+		return	(*this->value == *typed_rhs.value) && 
+				(this->index == typed_rhs.index);
+	}
 };
 
 class dynamic_index_node : public variable_access_node
@@ -282,6 +377,17 @@ public:
 	DECLARE_AST_NODE(dynamic_index_node, variable_access_node)
 
 	std::shared_ptr<ast_node> index;
+
+	virtual bool operator==(ast_node const& rhs) 
+	{ 
+		if (!rhs.is_type(this->get_type()))
+			return false;
+
+		auto typed_rhs = static_cast<dynamic_index_node const&>(rhs);
+
+		return	(*this->value == *typed_rhs.value) && 
+				(*this->index == *typed_rhs.index);
+	}
 };
 
 // function call
@@ -294,6 +400,16 @@ public:
 	virtual ~call_expr_node() {};
 
 	std::vector<std::shared_ptr<ast_node>> arguments;
+
+	virtual bool operator==(ast_node const& rhs) 
+	{ 
+		if (!rhs.is_type(this->get_type()))
+			return false;
+
+		auto typed_rhs = static_cast<call_expr_node const&>(rhs);
+
+		return	(this->arguments == typed_rhs.arguments);
+	}
 
 protected:
 	void push_back()
@@ -326,6 +442,17 @@ public:
 		this->push_back(args...);
 	}
 
+	virtual bool operator==(ast_node const& rhs) 
+	{ 
+		if (!rhs.is_type(this->get_type()))
+			return false;
+
+		auto typed_rhs = static_cast<function_call_expr_node const&>(rhs);
+
+		return	(this->arguments == typed_rhs.arguments) &&
+				(this->name == typed_rhs.name);
+	}
+
 	std::string name;
 };
 
@@ -342,6 +469,17 @@ public:
 		this->push_back(args...);
 	}
 
+	virtual bool operator==(ast_node const& rhs) 
+	{ 
+		if (!rhs.is_type(this->get_type()))
+			return false;
+
+		auto typed_rhs = static_cast<instruction_call_expr_node const&>(rhs);
+
+		return	(this->arguments == typed_rhs.arguments) &&
+				(this->opcode == typed_rhs.opcode);
+	}
+
 	uint8_t opcode;
 };
 
@@ -354,6 +492,17 @@ public:
 
 	std::shared_ptr<ast_node> value;
 	bool not_zero;
+
+	virtual bool operator==(ast_node const& rhs) 
+	{ 
+		if (!rhs.is_type(this->get_type()))
+			return false;
+
+		auto typed_rhs = static_cast<comparison_node const&>(rhs);
+
+		return	(*this->value == *typed_rhs.value) &&
+				(this->not_zero == typed_rhs.not_zero);
+	}
 };
 
 DEFINE_DERIVED_AST_NODE(if_node, comparison_node)
@@ -370,6 +519,16 @@ public:
 	DECLARE_AST_NODE(unary_node, ast_node)
 
 	std::shared_ptr<ast_node> value;
+
+	virtual bool operator==(ast_node const& rhs) 
+	{ 
+		if (!rhs.is_type(this->get_type()))
+			return false;
+
+		auto typed_rhs = static_cast<unary_node const&>(rhs);
+
+		return	(*this->value == *typed_rhs.value);
+	}
 };
 
 DEFINE_DERIVED_AST_NODE(negate_node, unary_node)
@@ -383,6 +542,17 @@ public:
 
 	std::shared_ptr<ast_node> lhs;
 	std::shared_ptr<ast_node> rhs;
+
+	virtual bool operator==(ast_node const& rhs) 
+	{ 
+		if (!rhs.is_type(this->get_type()))
+			return false;
+
+		auto typed_rhs = static_cast<binary_expr_node const&>(rhs);
+
+		return	(*this->lhs == *typed_rhs.lhs) &&
+				(*this->rhs == *typed_rhs.rhs);
+	}
 };
 
 DEFINE_DERIVED_AST_NODE(add_expr_node, binary_expr_node)
