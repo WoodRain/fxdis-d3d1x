@@ -26,7 +26,7 @@ void consolidation_visitor::visit(super_node* node)
 			}
 		}
 
-		virtual void visit(unary_node* node)
+		virtual void visit(unary_expr_node* node)
 		{
 			this->rewrite(node->value);
 		}

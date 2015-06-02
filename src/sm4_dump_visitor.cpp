@@ -176,7 +176,7 @@ void dump_visitor::visit(instruction_call_expr_node* node)
 	--depth_;
 }
 
-void dump_visitor::visit(unary_node* node)
+void dump_visitor::visit(unary_expr_node* node)
 {
 	write_spaces();
 	stream_ << node->get_type_string();

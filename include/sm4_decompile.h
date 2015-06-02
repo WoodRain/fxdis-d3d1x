@@ -41,7 +41,7 @@ typedef sm4_op operand;
 	/* Comparison */ \
 	AST_NODE_CLASS(comparison_node) \
 	/* Instruction nodes */ \
-	AST_NODE_CLASS(unary_node) \
+	AST_NODE_CLASS(unary_expr_node) \
 	AST_NODE_CLASS(if_node) \
 	AST_NODE_CLASS(else_node) \
 	AST_NODE_CLASS(ret_node) \
@@ -512,11 +512,11 @@ DEFINE_DERIVED_AST_NODE(else_node, super_node)
 DEFINE_DERIVED_AST_NODE(ret_node, ast_node)
 
 // unary
-class unary_node : public ast_node
+class unary_expr_node : public ast_node
 {
 public:
-	virtual ~unary_node() {};
-	DECLARE_AST_NODE(unary_node, ast_node)
+	virtual ~unary_expr_node() {};
+	DECLARE_AST_NODE(unary_expr_node, ast_node)
 
 	std::shared_ptr<ast_node> value;
 
@@ -525,13 +525,13 @@ public:
 		if (!rhs.is_type(this->get_type()))
 			return false;
 
-		auto typed_rhs = static_cast<unary_node const&>(rhs);
+		auto typed_rhs = static_cast<unary_expr_node const&>(rhs);
 
 		return	(*this->value == *typed_rhs.value);
 	}
 };
 
-DEFINE_DERIVED_AST_NODE(negate_node, unary_node)
+DEFINE_DERIVED_AST_NODE(negate_node, unary_expr_node)
 
 // fun stuff! actual operators!
 class binary_expr_node : public ast_node

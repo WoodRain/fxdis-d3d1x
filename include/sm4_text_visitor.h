@@ -29,7 +29,7 @@ public:
 	virtual void visit(function_call_expr_node* node);
 	virtual void visit(instruction_call_expr_node* node);
 
-	virtual void visit(unary_node* node);
+	virtual void visit(unary_expr_node* node);
 
 	virtual void visit(ret_node* node);
 

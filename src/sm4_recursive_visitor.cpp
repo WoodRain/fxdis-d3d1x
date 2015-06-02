@@ -63,7 +63,7 @@ void recursive_visitor::visit(call_expr_node* node)
 		arg->accept(*this);
 }
 
-void recursive_visitor::visit(unary_node* node)
+void recursive_visitor::visit(unary_expr_node* node)
 {
 	node->value->accept(*this);
 }

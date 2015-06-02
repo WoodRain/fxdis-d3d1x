@@ -202,7 +202,7 @@ void text_visitor::visit(instruction_call_expr_node* node)
 	stream_ << ")";
 }
 
-void text_visitor::visit(unary_node* node)
+void text_visitor::visit(unary_expr_node* node)
 {	
 	stream_ << sanitized_node_type(node) << "(";
 	node->value->accept(*this);
