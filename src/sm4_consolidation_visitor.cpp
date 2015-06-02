@@ -17,11 +17,12 @@ void consolidation_visitor::visit(super_node* node)
 	public:
 		void rewrite(std::shared_ptr<ast_node>& node)
 		{
-			auto lhs = last_node->lhs;
+			auto va_lhs = node_cast<swizzle_node>(last_node->lhs);
+			auto va_node = node_cast<swizzle_node>(node);
 
 			// if the last node's lhs is equal to this node,
 			// replace the node with the last node's rhs
-			if (index_equal(last_node->lhs.get(), node.get()))
+			if (va_lhs && va_node && (*va_lhs == *va_node))
 			{
 				node = last_node->rhs;
 				this->rewrote = true;

@@ -183,10 +183,10 @@ void rewrite_function_call_expr_node(std::shared_ptr<ast_node>& node)
 		{
 			if (nested_fc_node->name == "dot")
 			{
-				auto argument1 = nested_fc_node->arguments[0];
-				auto argument2 = nested_fc_node->arguments[1];
+				auto argument1 = node_cast<swizzle_node>(nested_fc_node->arguments[0]);
+				auto argument2 = node_cast<swizzle_node>(nested_fc_node->arguments[1]);
 
-				if (index_equal(argument1.get(), argument2.get()))
+				if (argument1 && argument2 && (*argument1 == *argument2))
 					node = std::make_shared<function_call_expr_node>("length", argument1);
 			}
 		}
@@ -195,12 +195,6 @@ void rewrite_function_call_expr_node(std::shared_ptr<ast_node>& node)
 	
 void rewrite_node(std::shared_ptr<ast_node>& node)
 {
-	if (node->is_type(node_type::instruction_call_expr_node))
-		rewrite_instruction_call_expr_node(node);
-
-	if (node->is_type(node_type::add_expr_node))
-		rewrite_add_expr_node(node);
-
 	if (node->is_type(node_type::mask_node))
 		rewrite_mask_node(node);
 
@@ -209,6 +203,12 @@ void rewrite_node(std::shared_ptr<ast_node>& node)
 
 	if (node->is_type(node_type::swizzle_node))
 		rewrite_swizzle_node(node);
+
+	if (node->is_type(node_type::instruction_call_expr_node))
+		rewrite_instruction_call_expr_node(node);
+
+	if (node->is_type(node_type::add_expr_node))
+		rewrite_add_expr_node(node);
 
 	if (node->is_type(node_type::function_call_expr_node))
 		rewrite_function_call_expr_node(node);

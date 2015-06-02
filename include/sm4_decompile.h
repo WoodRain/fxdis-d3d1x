@@ -33,6 +33,7 @@ typedef sm4_op operand;
 	AST_NODE_CLASS(function_call_expr_node) \
 	AST_NODE_CLASS(instruction_call_expr_node) \
 	/* Indexing */ \
+	AST_NODE_CLASS(variable_access_node) \
 	AST_NODE_CLASS(mask_node) \
 	AST_NODE_CLASS(swizzle_node) \
 	AST_NODE_CLASS(scalar_node) \
@@ -232,62 +233,54 @@ public:
 };
 
 // indexing
-class mask_node : public ast_node
+class variable_access_node : public ast_node
+{
+public:
+	virtual ~variable_access_node() {};
+	DECLARE_AST_NODE(variable_access_node, ast_node)
+
+	std::shared_ptr<global_variable_node> value;
+};
+
+class mask_node : public variable_access_node
 {
 public:
 	virtual ~mask_node() {};
-	DECLARE_AST_NODE(mask_node, ast_node)
+	DECLARE_AST_NODE(mask_node, variable_access_node)
 
-	std::shared_ptr<global_variable_node> value;
 	std::vector<uint8_t> indices;
-
-	bool operator==(mask_node const& rhs) const
-	{
-		return *this->value == *rhs.value && this->indices == rhs.indices;
-	}
 };
 
-class swizzle_node : public ast_node
+class swizzle_node : public variable_access_node
 {
 public:
 	virtual ~swizzle_node() {};
-	DECLARE_AST_NODE(swizzle_node, ast_node)
+	DECLARE_AST_NODE(swizzle_node, variable_access_node)
 
-	std::shared_ptr<global_variable_node> value;
 	std::vector<uint8_t> indices;
 
 	bool operator==(swizzle_node const& rhs) const
 	{
-		return *this->value == *rhs.value && this->indices == rhs.indices;
+		return	(*this->value == *rhs.value) && 
+				(this->indices == rhs.indices);
 	}
 };
 
-class scalar_node : public ast_node
+class scalar_node : public variable_access_node
 {
 public:
 	virtual ~scalar_node() {};
-	DECLARE_AST_NODE(scalar_node, ast_node)
+	DECLARE_AST_NODE(scalar_node, variable_access_node)
 
-	std::shared_ptr<global_variable_node> value;
 	uint8_t index;
-
-	bool operator==(scalar_node const& rhs) const
-	{
-		return *this->value == *rhs.value && this->index == rhs.index;
-	}
 };
 
-// todo: clean up, I feel like I'm writing PHP here
-// checks whether lhs and rhs are equal, assuming they're one of the three index operators
-bool index_equal(ast_node const* lhs, ast_node const* rhs);
-
-class dynamic_index_node : public ast_node
+class dynamic_index_node : public variable_access_node
 {
 public:
 	virtual ~dynamic_index_node() {};
-	DECLARE_AST_NODE(dynamic_index_node, ast_node)
+	DECLARE_AST_NODE(dynamic_index_node, variable_access_node)
 
-	std::shared_ptr<global_variable_node> value;
 	std::shared_ptr<ast_node> index;
 };
 
@@ -298,6 +291,11 @@ public:
 	call_expr_node() {}
 	DECLARE_AST_NODE(call_expr_node, ast_node)
 
+	virtual ~call_expr_node() {};
+
+	std::vector<std::shared_ptr<ast_node>> arguments;
+
+protected:
 	void push_back()
 	{
 	}
@@ -310,13 +308,9 @@ public:
 	template <typename Value, typename... Values>
 	void push_back(Value&& arg, Values&&... args)
 	{
-		push_back(arg);
+		this->arguments.push_back(arg);
 		push_back(args...);
 	}
-
-	virtual ~call_expr_node() {};
-
-	std::vector<std::shared_ptr<ast_node>> arguments;
 };
 
 class function_call_expr_node : public call_expr_node
