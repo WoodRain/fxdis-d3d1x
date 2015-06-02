@@ -123,22 +123,19 @@ void rewrite_mask_node(std::shared_ptr<ast_node>& node)
 {
 	auto old_mask_node = std::static_pointer_cast<mask_node>(node);
 
-	// mask_node with a size of 1? rewrite to scalar_node
-	if (old_mask_node->indices.size() == 1)
-	{
-		auto new_node = std::make_shared<scalar_node>();
-		new_node->value = old_mask_node->value;
-		new_node->index = old_mask_node->indices.front();
+	// rewrite all mask_nodes to single-element swizzle_nodes
+	auto new_node = std::make_shared<swizzle_node>();
+	new_node->value = old_mask_node->value;
+	new_node->indices = old_mask_node->indices;
 
-		node = new_node;
-	}
+	node = new_node;
 }
 
 void rewrite_swizzle_node(std::shared_ptr<ast_node>& node)
 {
 	auto old_swizzle_node = std::static_pointer_cast<swizzle_node>(node);
 
-	// swizzle_node where all the elements are the same? rewrite to scalar_node
+	// swizzle_node where all the elements are the same? rewrite to single-element swizzle_node
 	bool same = true;
 	auto first_index = old_swizzle_node->indices.front();
 
@@ -147,12 +144,21 @@ void rewrite_swizzle_node(std::shared_ptr<ast_node>& node)
 
 	if (same)
 	{
-		auto new_node = std::make_shared<scalar_node>();
-		new_node->value = old_swizzle_node->value;
-		new_node->index = first_index;
-
-		node = new_node;
+		old_swizzle_node->indices.clear();
+		old_swizzle_node->indices.push_back(first_index);
 	}
+}
+
+void rewrite_scalar_node(std::shared_ptr<ast_node>& node)
+{
+	// rewrite all scalar_nodes to single-element swizzle_nodes
+	auto old_scalar_node = std::static_pointer_cast<scalar_node>(node);
+
+	auto new_node = std::make_shared<swizzle_node>();
+	new_node->value = old_scalar_node->value;
+	new_node->indices.push_back(old_scalar_node->index);
+
+	node = new_node;
 }
 
 void rewrite_function_call_expr_node(std::shared_ptr<ast_node>& node)
@@ -193,6 +199,9 @@ void rewrite_node(std::shared_ptr<ast_node>& node)
 	if (node->is_type(node_type::swizzle_node))
 		rewrite_swizzle_node(node);
 
+	if (node->is_type(node_type::scalar_node))
+		rewrite_scalar_node(node);
+
 	if (node->is_type(node_type::function_call_expr_node))
 		rewrite_function_call_expr_node(node);
 }
@@ -206,7 +215,7 @@ void rewrite_visitor::visit(binary_expr_node* node)
 	node->rhs->accept(*this);
 }
 
-void rewrite_visitor::visit(function_call_expr_node* node)
+void rewrite_visitor::visit(call_expr_node* node)
 {
 	for (auto& arg : node->arguments)
 	{
