@@ -9,22 +9,22 @@ public:
 	virtual void visit(ast_node* node);
 	virtual void visit(super_node* node);
 
-	virtual void visit(index_node* node);
+	virtual void visit(dynamic_index_node* node);
 	virtual void visit(mask_node* node);
 	virtual void visit(scalar_node* node);
 	virtual void visit(swizzle_node* node);
 
 	virtual void visit(constant_node* node);
-	virtual void visit(global_index_node* node);
+	virtual void visit(global_variable_node* node);
 	virtual void visit(vector_node* node);
 
 	virtual void visit(comparison_node* node);
 
-	virtual void visit(call_node* node);
+	virtual void visit(call_expr_node* node);
 
 	virtual void visit(unary_node* node);
 
-	virtual void visit(binary_op* node);
+	virtual void visit(binary_expr_node* node);
 };
 
 }

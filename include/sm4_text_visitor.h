@@ -15,19 +15,19 @@ public:
 	virtual void visit(ast_node* node);
 	virtual void visit(super_node* node);
 
-	virtual void visit(index_node* node);
+	virtual void visit(dynamic_index_node* node);
 	virtual void visit(mask_node* node);
 	virtual void visit(scalar_node* node);
 	virtual void visit(swizzle_node* node);
 
 	virtual void visit(constant_node* node);
-	virtual void visit(global_index_node* node);
+	virtual void visit(global_variable_node* node);
 	virtual void visit(vector_node* node);
 
 	virtual void visit(comparison_node* node);
 
-	virtual void visit(function_call_node* node);
-	virtual void visit(instruction_call_node* node);
+	virtual void visit(function_call_expr_node* node);
+	virtual void visit(instruction_call_expr_node* node);
 
 	virtual void visit(unary_node* node);
 
@@ -35,11 +35,11 @@ public:
 
 	virtual void visit(negate_node* node);
 
-	virtual void visit(add_node* node);
-	virtual void visit(sub_node* node);
-	virtual void visit(mul_node* node);
-	virtual void visit(div_node* node);
-	virtual void visit(assign_node* node);
+	virtual void visit(add_expr_node* node);
+	virtual void visit(sub_expr_node* node);
+	virtual void visit(mul_expr_node* node);
+	virtual void visit(div_expr_node* node);
+	virtual void visit(assign_expr_node* node);
 
 	text_visitor operator=(text_visitor const& rhs) = delete;
 

@@ -77,17 +77,17 @@ std::shared_ptr<ast_node> decompile_operand(sm4::operand const* operand, sm4_opc
 		// if we've found that this is actually an indexing operation
 		if (operand->indices[0].reg.get())
 		{
-			auto indexing_node = std::make_shared<index_node>();
+			auto indexing_node = std::make_shared<dynamic_index_node>();
 			indexing_node->index = decompile_operand(
 				operand->indices[0].reg.get(), opcode_type);
-			indexing_node->value = std::static_pointer_cast<global_index_node>(node);
+			indexing_node->value = std::static_pointer_cast<global_variable_node>(node);
 			node = indexing_node;
 		}
 	}
 	
 	if (operand->comps)
 	{
-		auto gi_node = std::static_pointer_cast<global_index_node>(node);
+		auto gi_node = std::static_pointer_cast<global_variable_node>(node);
 
 		if (operand->mode == SM4_OPERAND_MODE_MASK && operand->mask)
 		{
@@ -123,7 +123,7 @@ std::shared_ptr<ast_node> decompile_operand(sm4::operand const* operand, sm4_opc
 	}
 
 	if (operand->abs)
-		node = std::make_shared<function_call_node>("abs", node);
+		node = std::make_shared<function_call_expr_node>("abs", node);
 
 	if (operand->neg)
 	{
@@ -163,7 +163,7 @@ std::shared_ptr<T> decompile_unary(sm4::instruction const* instruction)
 std::shared_ptr<ast_node> saturate_if_necessary(sm4::instruction const* instruction, std::shared_ptr<ast_node> node)
 {
 	if (instruction->insn.sat)
-		return std::make_shared<function_call_node>("saturate", node);
+		return std::make_shared<function_call_expr_node>("saturate", node);
 
 	return node;
 }
@@ -211,15 +211,15 @@ std::shared_ptr<super_node> decompile(program const* p)
 		case SM4_OPCODE_ROUND_NI:
 		case SM4_OPCODE_EXP:
 		{
-			auto node = std::make_shared<instruction_call_node>();
+			auto node = std::make_shared<instruction_call_expr_node>();
 			node->opcode = instruction->opcode;
 			node->arguments.push_back(decompile_operand(instruction, 1));
 
-			auto new_assign_node = std::make_shared<assign_node>();
-			new_assign_node->lhs = decompile_operand(instruction, 0);
-			new_assign_node->rhs = saturate_if_necessary(instruction, node);
+			auto new_assign_expr_node = std::make_shared<assign_expr_node>();
+			new_assign_expr_node->lhs = decompile_operand(instruction, 0);
+			new_assign_expr_node->rhs = saturate_if_necessary(instruction, node);
 
-			root->children.push_back(new_assign_node);
+			root->children.push_back(new_assign_expr_node);
 			break;
 		}
 
@@ -239,33 +239,33 @@ std::shared_ptr<super_node> decompile(program const* p)
 		case SM4_OPCODE_MIN:
 		case SM4_OPCODE_LT:
 		{
-			auto node = std::make_shared<instruction_call_node>();
+			auto node = std::make_shared<instruction_call_expr_node>();
 			node->opcode = instruction->opcode;
 			node->arguments.push_back(decompile_operand(instruction, 1));
 			node->arguments.push_back(decompile_operand(instruction, 2));
 
-			auto new_assign_node = std::make_shared<assign_node>();
-			new_assign_node->lhs = decompile_operand(instruction, 0);
-			new_assign_node->rhs = saturate_if_necessary(instruction, node);
+			auto new_assign_expr_node = std::make_shared<assign_expr_node>();
+			new_assign_expr_node->lhs = decompile_operand(instruction, 0);
+			new_assign_expr_node->rhs = saturate_if_necessary(instruction, node);
 
-			root->children.push_back(new_assign_node);
+			root->children.push_back(new_assign_expr_node);
 			break;
 		}
 
 		case SM4_OPCODE_MAD:
 		case SM4_OPCODE_MOVC:
 		{
-			auto node = std::make_shared<instruction_call_node>();
+			auto node = std::make_shared<instruction_call_expr_node>();
 			node->opcode = instruction->opcode;
 			node->arguments.push_back(decompile_operand(instruction, 1));
 			node->arguments.push_back(decompile_operand(instruction, 2));
 			node->arguments.push_back(decompile_operand(instruction, 3));
 
-			auto new_assign_node = std::make_shared<assign_node>();
-			new_assign_node->lhs = decompile_operand(instruction, 0);
-			new_assign_node->rhs = saturate_if_necessary(instruction, node);
+			auto new_assign_expr_node = std::make_shared<assign_expr_node>();
+			new_assign_expr_node->lhs = decompile_operand(instruction, 0);
+			new_assign_expr_node->rhs = saturate_if_necessary(instruction, node);
 
-			root->children.push_back(new_assign_node);
+			root->children.push_back(new_assign_expr_node);
 			break;
 		}
 

@@ -53,7 +53,7 @@ void text_visitor::visit(super_node* node)
 	write_newline();
 }
 
-void text_visitor::visit(index_node* node)
+void text_visitor::visit(dynamic_index_node* node)
 {
 	node->value->accept(*this);
 	stream_ << "[";
@@ -108,7 +108,7 @@ void text_visitor::visit(constant_node* node)
 	}
 }
 
-void text_visitor::visit(global_index_node* node)
+void text_visitor::visit(global_variable_node* node)
 {
 	stream_ << sanitized_node_type(node) << node->index;
 }
@@ -170,7 +170,7 @@ void text_visitor::visit(comparison_node* node)
 	write_newline();
 }
 
-void text_visitor::visit(function_call_node* node)
+void text_visitor::visit(function_call_expr_node* node)
 {
 	stream_ << node->name << "(";
 	
@@ -186,7 +186,7 @@ void text_visitor::visit(function_call_node* node)
 	stream_ << ")";
 }
 
-void text_visitor::visit(instruction_call_node* node)
+void text_visitor::visit(instruction_call_expr_node* node)
 {
 	stream_ << sm4_opcode_names[node->opcode] << "(";
 	
@@ -222,35 +222,35 @@ void text_visitor::visit(negate_node* node)
 	node->value->accept(*this);
 }
 
-void text_visitor::visit(add_node* node)
+void text_visitor::visit(add_expr_node* node)
 {
 	node->lhs->accept(*this);
 	stream_ << " + ";
 	node->rhs->accept(*this);
 }
 
-void text_visitor::visit(sub_node* node)
+void text_visitor::visit(sub_expr_node* node)
 {
 	node->lhs->accept(*this);
 	stream_ << " - ";
 	node->rhs->accept(*this);
 }
 
-void text_visitor::visit(mul_node* node)
+void text_visitor::visit(mul_expr_node* node)
 {
 	node->lhs->accept(*this);
 	stream_ << " * ";
 	node->rhs->accept(*this);
 }
 
-void text_visitor::visit(div_node* node)
+void text_visitor::visit(div_expr_node* node)
 {
 	node->lhs->accept(*this);
 	stream_ << " / ";
 	node->rhs->accept(*this);
 }
 
-void text_visitor::visit(assign_node* node)
+void text_visitor::visit(assign_expr_node* node)
 {
 	write_spaces();
 	node->lhs->accept(*this);

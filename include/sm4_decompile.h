@@ -21,7 +21,7 @@ typedef sm4_op operand;
 	AST_NODE_CLASS(super_node) \
 	/* Constants, variables */ \
 	AST_NODE_CLASS(constant_node) \
-	AST_NODE_CLASS(global_index_node) \
+	AST_NODE_CLASS(global_variable_node) \
 	AST_NODE_CLASS(vector_node) \
 	AST_NODE_CLASS(register_node) \
 	AST_NODE_CLASS(constant_buffer_node) \
@@ -29,14 +29,14 @@ typedef sm4_op operand;
 	AST_NODE_CLASS(input_node) \
 	AST_NODE_CLASS(output_node) \
 	/* Function calls */ \
-	AST_NODE_CLASS(call_node) \
-	AST_NODE_CLASS(function_call_node) \
-	AST_NODE_CLASS(instruction_call_node) \
+	AST_NODE_CLASS(call_expr_node) \
+	AST_NODE_CLASS(function_call_expr_node) \
+	AST_NODE_CLASS(instruction_call_expr_node) \
 	/* Indexing */ \
 	AST_NODE_CLASS(mask_node) \
 	AST_NODE_CLASS(swizzle_node) \
 	AST_NODE_CLASS(scalar_node) \
-	AST_NODE_CLASS(index_node) \
+	AST_NODE_CLASS(dynamic_index_node) \
 	/* Comparison */ \
 	AST_NODE_CLASS(comparison_node) \
 	/* Instruction nodes */ \
@@ -46,12 +46,12 @@ typedef sm4_op operand;
 	AST_NODE_CLASS(ret_node) \
 	AST_NODE_CLASS(negate_node) \
 	/* Rewritten expressions */ \
-	AST_NODE_CLASS(binary_op) \
-	AST_NODE_CLASS(add_node) \
-	AST_NODE_CLASS(sub_node) \
-	AST_NODE_CLASS(mul_node) \
-	AST_NODE_CLASS(div_node) \
-	AST_NODE_CLASS(assign_node)
+	AST_NODE_CLASS(binary_expr_node) \
+	AST_NODE_CLASS(add_expr_node) \
+	AST_NODE_CLASS(sub_expr_node) \
+	AST_NODE_CLASS(mul_expr_node) \
+	AST_NODE_CLASS(div_expr_node) \
+	AST_NODE_CLASS(assign_expr_node)
 
 #define AST_NODE_CLASS(klass) class klass;
 AST_NODE_CLASSES
@@ -171,40 +171,40 @@ public:
 	}
 };
 
-class global_index_node : public ast_node
+class global_variable_node : public ast_node
 {
 public:
-	global_index_node(int64_t index) :
+	global_variable_node(int64_t index) :
 		index(index)
 	{
 	}
 
-	virtual ~global_index_node() {};
-	DECLARE_AST_NODE(global_index_node, ast_node)
+	virtual ~global_variable_node() {};
+	DECLARE_AST_NODE(global_variable_node, ast_node)
 
 	int64_t index;
-	bool operator==(global_index_node const& rhs) const
+	bool operator==(global_variable_node const& rhs) const
 	{
 		return rhs.is_type(this->get_type()) && this->index == rhs.index;
 	}
 };
 
-#define DEFINE_DERIVED_GLOBAL_INDEX_NODE(node_name) \
-	class node_name : public global_index_node \
+#define DEFINE_DERIVED_GLOBAL_VARIABLE_NODE(node_name) \
+	class node_name : public global_variable_node \
 	{ \
 		public: \
 			node_name(int64_t index) : \
-				global_index_node(index) \
+				global_variable_node(index) \
 			{ \
 			} \
-		DECLARE_AST_NODE(node_name, global_index_node) \
+		DECLARE_AST_NODE(node_name, global_variable_node) \
 	}; \
 
-DEFINE_DERIVED_GLOBAL_INDEX_NODE(register_node)
-DEFINE_DERIVED_GLOBAL_INDEX_NODE(constant_buffer_node)
-DEFINE_DERIVED_GLOBAL_INDEX_NODE(immediate_constant_buffer_node)
-DEFINE_DERIVED_GLOBAL_INDEX_NODE(input_node)
-DEFINE_DERIVED_GLOBAL_INDEX_NODE(output_node)
+DEFINE_DERIVED_GLOBAL_VARIABLE_NODE(register_node)
+DEFINE_DERIVED_GLOBAL_VARIABLE_NODE(constant_buffer_node)
+DEFINE_DERIVED_GLOBAL_VARIABLE_NODE(immediate_constant_buffer_node)
+DEFINE_DERIVED_GLOBAL_VARIABLE_NODE(input_node)
+DEFINE_DERIVED_GLOBAL_VARIABLE_NODE(output_node)
 
 class vector_node : public ast_node
 {
@@ -222,7 +222,7 @@ public:
 	virtual ~mask_node() {};
 	DECLARE_AST_NODE(mask_node, ast_node)
 
-	std::shared_ptr<global_index_node> value;
+	std::shared_ptr<global_variable_node> value;
 	std::vector<uint8_t> indices;
 
 	bool operator==(mask_node const& rhs) const
@@ -237,7 +237,7 @@ public:
 	virtual ~swizzle_node() {};
 	DECLARE_AST_NODE(swizzle_node, ast_node)
 
-	std::shared_ptr<global_index_node> value;
+	std::shared_ptr<global_variable_node> value;
 	std::vector<uint8_t> indices;
 
 	bool operator==(swizzle_node const& rhs) const
@@ -252,7 +252,7 @@ public:
 	virtual ~scalar_node() {};
 	DECLARE_AST_NODE(scalar_node, ast_node)
 
-	std::shared_ptr<global_index_node> value;
+	std::shared_ptr<global_variable_node> value;
 	uint8_t index;
 
 	bool operator==(scalar_node const& rhs) const
@@ -265,22 +265,22 @@ public:
 // checks whether lhs and rhs are equal, assuming they're one of the three index operators
 bool index_equal(ast_node const* lhs, ast_node const* rhs);
 
-class index_node : public ast_node
+class dynamic_index_node : public ast_node
 {
 public:
-	virtual ~index_node() {};
-	DECLARE_AST_NODE(index_node, ast_node)
+	virtual ~dynamic_index_node() {};
+	DECLARE_AST_NODE(dynamic_index_node, ast_node)
 
+	std::shared_ptr<global_variable_node> value;
 	std::shared_ptr<ast_node> index;
-	std::shared_ptr<global_index_node> value;
 };
 
 // function call
-class call_node : public ast_node
+class call_expr_node : public ast_node
 {
 public:
-	call_node() {}
-	DECLARE_AST_NODE(call_node, ast_node)
+	call_expr_node() {}
+	DECLARE_AST_NODE(call_expr_node, ast_node)
 
 	void push_back()
 	{
@@ -298,19 +298,19 @@ public:
 		push_back(args...);
 	}
 
-	virtual ~call_node() {};
+	virtual ~call_expr_node() {};
 
 	std::vector<std::shared_ptr<ast_node>> arguments;
 };
 
-class function_call_node : public call_node
+class function_call_expr_node : public call_expr_node
 {
 public:
-	function_call_node() {}
-	DECLARE_AST_NODE(function_call_node, call_node)
+	function_call_expr_node() {}
+	DECLARE_AST_NODE(function_call_expr_node, call_expr_node)
 
 	template <typename... Values>
-	function_call_node(std::string const& name, Values&&... args) : 
+	function_call_expr_node(std::string const& name, Values&&... args) : 
 		name(name)
 	{
 		this->push_back(args...);
@@ -319,14 +319,14 @@ public:
 	std::string name;
 };
 
-class instruction_call_node : public call_node
+class instruction_call_expr_node : public call_expr_node
 {
 public:
-	instruction_call_node() {}
-	DECLARE_AST_NODE(instruction_call_node, call_node)
+	instruction_call_expr_node() {}
+	DECLARE_AST_NODE(instruction_call_expr_node, call_expr_node)
 
 	template <typename... Values>
-	instruction_call_node(uint8_t opcode, Values&&... args) : 
+	instruction_call_expr_node(uint8_t opcode, Values&&... args) : 
 		opcode(opcode)
 	{
 		this->push_back(args...);
@@ -365,21 +365,21 @@ public:
 DEFINE_DERIVED_AST_NODE(negate_node, unary_node)
 
 // fun stuff! actual operators!
-class binary_op : public ast_node
+class binary_expr_node : public ast_node
 {
 public:
-	virtual ~binary_op() {}
-	DECLARE_AST_NODE(binary_op, ast_node)
+	virtual ~binary_expr_node() {}
+	DECLARE_AST_NODE(binary_expr_node, ast_node)
 
 	std::shared_ptr<ast_node> lhs;
 	std::shared_ptr<ast_node> rhs;
 };
 
-DEFINE_DERIVED_AST_NODE(add_node, binary_op)
-DEFINE_DERIVED_AST_NODE(sub_node, binary_op)
-DEFINE_DERIVED_AST_NODE(mul_node, binary_op)
-DEFINE_DERIVED_AST_NODE(div_node, binary_op)
-DEFINE_DERIVED_AST_NODE(assign_node, binary_op)
+DEFINE_DERIVED_AST_NODE(add_expr_node, binary_expr_node)
+DEFINE_DERIVED_AST_NODE(sub_expr_node, binary_expr_node)
+DEFINE_DERIVED_AST_NODE(mul_expr_node, binary_expr_node)
+DEFINE_DERIVED_AST_NODE(div_expr_node, binary_expr_node)
+DEFINE_DERIVED_AST_NODE(assign_expr_node, binary_expr_node)
 
 std::shared_ptr<super_node> decompile(program const* p);
 

@@ -33,20 +33,20 @@ void consolidation_visitor::visit(super_node* node)
 			this->rewrite(node->value);
 		}
 
-		virtual void visit(call_node* node)
+		virtual void visit(call_expr_node* node)
 		{
 			for (auto& argument : node->arguments)
 				this->rewrite(argument);
 		}
 		
-		virtual void visit(binary_op* node)
+		virtual void visit(binary_expr_node* node)
 		{
 			this->rewrite(node->lhs);
 			this->rewrite(node->rhs);
 		}
 
 		bool rewrote = false;
-		std::shared_ptr<assign_node> last_node;
+		std::shared_ptr<assign_expr_node> last_node;
 	} roll_visitor;
 
 	std::vector<size_t> to_remove;
@@ -56,11 +56,11 @@ void consolidation_visitor::visit(super_node* node)
 		auto current_node = node->children[i];
 		current_node->accept(*this);
 
-		if (last_node->is_type(node_type::assign_node) && 
-			current_node->is_type(node_type::assign_node))
+		if (last_node->is_type(node_type::assign_expr_node) && 
+			current_node->is_type(node_type::assign_expr_node))
 		{
-			auto last_assign = std::static_pointer_cast<assign_node>(last_node);
-			auto current_assign = std::static_pointer_cast<assign_node>(current_node);
+			auto last_assign = std::static_pointer_cast<assign_expr_node>(last_node);
+			auto current_assign = std::static_pointer_cast<assign_expr_node>(current_node);
 
 			roll_visitor.rewrote = false;
 			roll_visitor.last_node = last_assign;

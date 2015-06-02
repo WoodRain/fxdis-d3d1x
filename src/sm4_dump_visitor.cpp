@@ -35,7 +35,7 @@ void dump_visitor::visit(super_node* node)
 	--depth_;
 }
 
-void dump_visitor::visit(index_node* node)
+void dump_visitor::visit(dynamic_index_node* node)
 {
 	write_spaces();
 	stream_ << node->get_type_string();
@@ -122,7 +122,7 @@ void dump_visitor::visit(constant_node* node)
 	--depth_;
 }
 
-void dump_visitor::visit(global_index_node* node)
+void dump_visitor::visit(global_variable_node* node)
 {
 	write_spaces();
 	stream_ << node->get_type_string() << " " << node->index;
@@ -152,7 +152,7 @@ void dump_visitor::visit(comparison_node* node)
 	--depth_;
 }
 
-void dump_visitor::visit(function_call_node* node)
+void dump_visitor::visit(function_call_expr_node* node)
 {
 	write_spaces();
 	stream_ << node->get_type_string() << " (" << node->name << ')';
@@ -164,7 +164,7 @@ void dump_visitor::visit(function_call_node* node)
 	--depth_;
 }
 
-void dump_visitor::visit(instruction_call_node* node)
+void dump_visitor::visit(instruction_call_expr_node* node)
 {
 	write_spaces();
 	stream_ << node->get_type_string() << " (" << sm4_opcode_names[node->opcode] << ')';
@@ -187,7 +187,7 @@ void dump_visitor::visit(unary_node* node)
 	--depth_;
 }
 
-void dump_visitor::visit(binary_op* node)
+void dump_visitor::visit(binary_expr_node* node)
 {
 	write_spaces();
 	stream_ << node->get_type_string();

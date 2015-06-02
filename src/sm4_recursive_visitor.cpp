@@ -14,7 +14,7 @@ void recursive_visitor::visit(super_node* node)
 		child->accept(*this);
 }
 
-void recursive_visitor::visit(index_node* node)
+void recursive_visitor::visit(dynamic_index_node* node)
 {
 	node->index->accept(*this);
 	node->value->accept(*this);
@@ -39,7 +39,7 @@ void recursive_visitor::visit(constant_node* node)
 {
 }
 
-void recursive_visitor::visit(global_index_node* node)
+void recursive_visitor::visit(global_variable_node* node)
 {
 }
 
@@ -57,7 +57,7 @@ void recursive_visitor::visit(comparison_node* node)
 		child->accept(*this);
 }
 
-void recursive_visitor::visit(call_node* node)
+void recursive_visitor::visit(call_expr_node* node)
 {
 	for (auto arg : node->arguments)
 		arg->accept(*this);
@@ -68,7 +68,7 @@ void recursive_visitor::visit(unary_node* node)
 	node->value->accept(*this);
 }
 
-void recursive_visitor::visit(binary_op* node)
+void recursive_visitor::visit(binary_expr_node* node)
 {
 	node->lhs->accept(*this);
 	node->rhs->accept(*this);
