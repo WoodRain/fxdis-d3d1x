@@ -186,37 +186,26 @@ void text_visitor::visit(function_call_node* node)
 	stream_ << ")";
 }
 
+void text_visitor::visit(instruction_call_node* node)
+{
+	stream_ << sm4_opcode_names[node->opcode] << "(";
+	
+	bool first = true;
+	for (auto argument : node->arguments)
+	{
+		if (!first)
+			stream_ << ", ";
+		argument->accept(*this);
+		first = false;
+	}
+
+	stream_ << ")";
+}
+
 void text_visitor::visit(unary_node* node)
 {	
 	stream_ << sanitized_node_type(node) << "(";
 	node->value->accept(*this);
-	stream_ << ")";
-}
-
-void text_visitor::visit(binary_instruction_node* node)
-{
-	stream_ << sm4_opcode_names[node->opcode] << "(";
-	node->input->accept(*this);
-	stream_ << ")";
-}
-
-void text_visitor::visit(ternary_instruction_node* node)
-{
-	stream_ << sm4_opcode_names[node->opcode] << "(";
-	node->lhs->accept(*this);
-	stream_ << ", ";
-	node->rhs->accept(*this);
-	stream_ << ")";
-}
-
-void text_visitor::visit(quaternary_instruction_node* node)
-{
-	stream_ << sm4_opcode_names[node->opcode] << "(";
-	node->lhs->accept(*this);
-	stream_ << ", ";
-	node->rhs1->accept(*this);
-	stream_ << ", ";
-	node->rhs2->accept(*this);
 	stream_ << ")";
 }
 

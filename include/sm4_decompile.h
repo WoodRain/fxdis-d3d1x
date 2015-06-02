@@ -29,7 +29,9 @@ typedef sm4_op operand;
 	AST_NODE_CLASS(input_node) \
 	AST_NODE_CLASS(output_node) \
 	/* Function calls */ \
+	AST_NODE_CLASS(call_node) \
 	AST_NODE_CLASS(function_call_node) \
+	AST_NODE_CLASS(instruction_call_node) \
 	/* Indexing */ \
 	AST_NODE_CLASS(mask_node) \
 	AST_NODE_CLASS(swizzle_node) \
@@ -39,9 +41,6 @@ typedef sm4_op operand;
 	AST_NODE_CLASS(comparison_node) \
 	/* Instruction nodes */ \
 	AST_NODE_CLASS(unary_node) \
-	AST_NODE_CLASS(binary_instruction_node) \
-	AST_NODE_CLASS(ternary_instruction_node) \
-	AST_NODE_CLASS(quaternary_instruction_node) \
 	AST_NODE_CLASS(if_node) \
 	AST_NODE_CLASS(else_node) \
 	AST_NODE_CLASS(ret_node) \
@@ -277,18 +276,14 @@ public:
 };
 
 // function call
-class function_call_node : public ast_node
+class call_node : public ast_node
 {
 public:
-	function_call_node() {}
+	call_node() {}
+	DECLARE_AST_NODE(call_node, ast_node)
 
-	template<typename... Args> inline void pass(Args&&...) {}
-
-	template <typename... Values>
-	function_call_node(std::string name, Values&&... args) :
-		name(name)
+	void push_back()
 	{
-		this->push_back(args...);
 	}
 
 	void push_back(std::shared_ptr<ast_node> node)
@@ -303,11 +298,41 @@ public:
 		push_back(args...);
 	}
 
-	virtual ~function_call_node() {};
-	DECLARE_AST_NODE(function_call_node, ast_node)
+	virtual ~call_node() {};
+
+	std::vector<std::shared_ptr<ast_node>> arguments;
+};
+
+class function_call_node : public call_node
+{
+public:
+	function_call_node() {}
+	DECLARE_AST_NODE(function_call_node, call_node)
+
+	template <typename... Values>
+	function_call_node(std::string const& name, Values&&... args) : 
+		name(name)
+	{
+		this->push_back(args...);
+	}
 
 	std::string name;
-	std::vector<std::shared_ptr<ast_node>> arguments;
+};
+
+class instruction_call_node : public call_node
+{
+public:
+	instruction_call_node() {}
+	DECLARE_AST_NODE(instruction_call_node, call_node)
+
+	template <typename... Values>
+	instruction_call_node(uint8_t opcode, Values&&... args) : 
+		opcode(opcode)
+	{
+		this->push_back(args...);
+	}
+
+	uint8_t opcode;
 };
 
 // comparison
@@ -338,42 +363,6 @@ public:
 };
 
 DEFINE_DERIVED_AST_NODE(negate_node, unary_node)
-
-// binary
-class binary_instruction_node : public ast_node
-{
-public:
-	virtual ~binary_instruction_node() {};
-	DECLARE_AST_NODE(binary_instruction_node, ast_node)
-
-	uint8_t opcode;
-	std::shared_ptr<ast_node> input;
-};
-
-// ternary
-class ternary_instruction_node : public ast_node
-{
-public:
-	virtual ~ternary_instruction_node() {};
-	DECLARE_AST_NODE(ternary_instruction_node, ast_node)
-
-	uint8_t opcode;
-	std::shared_ptr<ast_node> lhs;
-	std::shared_ptr<ast_node> rhs;
-};
-
-// quaternary
-class quaternary_instruction_node : public ast_node
-{
-public:
-	virtual ~quaternary_instruction_node() {};
-	DECLARE_AST_NODE(quaternary_instruction_node, ast_node)
-
-	uint8_t opcode;
-	std::shared_ptr<ast_node> lhs;
-	std::shared_ptr<ast_node> rhs1;
-	std::shared_ptr<ast_node> rhs2;
-};
 
 // fun stuff! actual operators!
 class binary_op : public ast_node

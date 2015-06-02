@@ -57,7 +57,7 @@ void recursive_visitor::visit(comparison_node* node)
 		child->accept(*this);
 }
 
-void recursive_visitor::visit(function_call_node* node)
+void recursive_visitor::visit(call_node* node)
 {
 	for (auto arg : node->arguments)
 		arg->accept(*this);
@@ -66,24 +66,6 @@ void recursive_visitor::visit(function_call_node* node)
 void recursive_visitor::visit(unary_node* node)
 {
 	node->value->accept(*this);
-}
-
-void recursive_visitor::visit(binary_instruction_node* node)
-{
-	node->input->accept(*this);
-}
-
-void recursive_visitor::visit(ternary_instruction_node* node)
-{
-	node->lhs->accept(*this);
-	node->rhs->accept(*this);
-}
-
-void recursive_visitor::visit(quaternary_instruction_node* node)
-{
-	node->lhs->accept(*this);
-	node->rhs1->accept(*this);
-	node->rhs2->accept(*this);
 }
 
 void recursive_visitor::visit(binary_op* node)

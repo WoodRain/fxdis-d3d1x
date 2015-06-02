@@ -33,34 +33,16 @@ void consolidation_visitor::visit(super_node* node)
 			this->rewrite(node->value);
 		}
 
-		virtual void visit(binary_instruction_node* node)
+		virtual void visit(call_node* node)
 		{
-			this->rewrite(node->input);
+			for (auto& argument : node->arguments)
+				this->rewrite(argument);
 		}
-
-		virtual void visit(ternary_instruction_node* node)
-		{
-			this->rewrite(node->lhs);
-			this->rewrite(node->rhs);
-		}
-
-		virtual void visit(quaternary_instruction_node* node)
-		{
-			this->rewrite(node->lhs);
-			this->rewrite(node->rhs1);
-			this->rewrite(node->rhs2);
-		}
-
+		
 		virtual void visit(binary_op* node)
 		{
 			this->rewrite(node->lhs);
 			this->rewrite(node->rhs);
-		}
-
-		virtual void visit(function_call_node* node)
-		{
-			for (auto& argument : node->arguments)
-				this->rewrite(argument);
 		}
 
 		bool rewrote = false;
@@ -74,7 +56,8 @@ void consolidation_visitor::visit(super_node* node)
 		auto current_node = node->children[i];
 		current_node->accept(*this);
 
-		if (last_node->is_type(node_type::assign_node) && current_node->is_type(node_type::assign_node))
+		if (last_node->is_type(node_type::assign_node) && 
+			current_node->is_type(node_type::assign_node))
 		{
 			auto last_assign = std::static_pointer_cast<assign_node>(last_node);
 			auto current_assign = std::static_pointer_cast<assign_node>(current_node);

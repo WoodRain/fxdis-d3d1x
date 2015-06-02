@@ -164,6 +164,18 @@ void dump_visitor::visit(function_call_node* node)
 	--depth_;
 }
 
+void dump_visitor::visit(instruction_call_node* node)
+{
+	write_spaces();
+	stream_ << node->get_type_string() << " (" << sm4_opcode_names[node->opcode] << ')';
+	write_newline();
+
+	++depth_;
+	for (auto arg : node->arguments)
+		arg->accept(*this);
+	--depth_;
+}
+
 void dump_visitor::visit(unary_node* node)
 {
 	write_spaces();
@@ -172,42 +184,6 @@ void dump_visitor::visit(unary_node* node)
 
 	++depth_;
 	node->value->accept(*this);
-	--depth_;
-}
-
-void dump_visitor::visit(binary_instruction_node* node)
-{
-	write_spaces();
-	stream_ << node->get_type_string() << " (" << sm4_opcode_names[node->opcode] << ")";
-	write_newline();
-
-	++depth_;
-	node->input->accept(*this);
-	--depth_;
-}
-
-void dump_visitor::visit(ternary_instruction_node* node)
-{
-	write_spaces();
-	stream_ << node->get_type_string() << " (" << sm4_opcode_names[node->opcode] << ")";
-	write_newline();
-
-	++depth_;
-	node->lhs->accept(*this);
-	node->rhs->accept(*this);
-	--depth_;
-}
-
-void dump_visitor::visit(quaternary_instruction_node* node)
-{
-	write_spaces();
-	stream_ << node->get_type_string() << " (" << sm4_opcode_names[node->opcode] << ")";
-	write_newline();
-
-	++depth_;
-	node->lhs->accept(*this);
-	node->rhs1->accept(*this);
-	node->rhs2->accept(*this);
 	--depth_;
 }
 

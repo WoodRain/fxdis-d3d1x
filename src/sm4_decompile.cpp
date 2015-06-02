@@ -211,9 +211,9 @@ std::shared_ptr<super_node> decompile(program const* p)
 		case SM4_OPCODE_ROUND_NI:
 		case SM4_OPCODE_EXP:
 		{
-			auto node = std::make_shared<binary_instruction_node>();
+			auto node = std::make_shared<instruction_call_node>();
 			node->opcode = instruction->opcode;
-			node->input = decompile_operand(instruction, 1);
+			node->arguments.push_back(decompile_operand(instruction, 1));
 
 			auto new_assign_node = std::make_shared<assign_node>();
 			new_assign_node->lhs = decompile_operand(instruction, 0);
@@ -239,10 +239,10 @@ std::shared_ptr<super_node> decompile(program const* p)
 		case SM4_OPCODE_MIN:
 		case SM4_OPCODE_LT:
 		{
-			auto node = std::make_shared<ternary_instruction_node>();
+			auto node = std::make_shared<instruction_call_node>();
 			node->opcode = instruction->opcode;
-			node->lhs = decompile_operand(instruction, 1);
-			node->rhs = decompile_operand(instruction, 2);
+			node->arguments.push_back(decompile_operand(instruction, 1));
+			node->arguments.push_back(decompile_operand(instruction, 2));
 
 			auto new_assign_node = std::make_shared<assign_node>();
 			new_assign_node->lhs = decompile_operand(instruction, 0);
@@ -255,11 +255,11 @@ std::shared_ptr<super_node> decompile(program const* p)
 		case SM4_OPCODE_MAD:
 		case SM4_OPCODE_MOVC:
 		{
-			auto node = std::make_shared<quaternary_instruction_node>();
+			auto node = std::make_shared<instruction_call_node>();
 			node->opcode = instruction->opcode;
-			node->lhs = decompile_operand(instruction, 1);
-			node->rhs1 = decompile_operand(instruction, 2);
-			node->rhs2 = decompile_operand(instruction, 3);
+			node->arguments.push_back(decompile_operand(instruction, 1));
+			node->arguments.push_back(decompile_operand(instruction, 2));
+			node->arguments.push_back(decompile_operand(instruction, 3));
 
 			auto new_assign_node = std::make_shared<assign_node>();
 			new_assign_node->lhs = decompile_operand(instruction, 0);
