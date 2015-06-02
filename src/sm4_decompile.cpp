@@ -80,14 +80,14 @@ std::shared_ptr<ast_node> decompile_operand(sm4::operand const* operand, sm4_opc
 			auto indexing_node = std::make_shared<dynamic_index_node>();
 			indexing_node->index = decompile_operand(
 				operand->indices[0].reg.get(), opcode_type);
-			indexing_node->value = std::static_pointer_cast<global_variable_node>(node);
+			indexing_node->value = force_node_cast<global_variable_node>(node);
 			node = indexing_node;
 		}
 	}
 	
 	if (operand->comps)
 	{
-		auto gi_node = std::static_pointer_cast<global_variable_node>(node);
+		auto gi_node = force_node_cast<global_variable_node>(node);
 
 		if (operand->mode == SM4_OPERAND_MODE_MASK && operand->mask)
 		{

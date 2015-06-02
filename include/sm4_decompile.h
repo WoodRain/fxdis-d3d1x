@@ -77,6 +77,7 @@ public:
 
 #define DECLARE_AST_NODE(node_name, base) \
 	typedef base base_class; \
+	static const node_type static_type = node_type::node_name; \
 	virtual char const* get_type_string() const { return #node_name; } \
 	virtual node_type get_type() const { return node_type::node_name; } \
 	virtual void accept(ast_visitor& visitor) { visitor.visit(this); }
@@ -92,6 +93,21 @@ public:
 
 	DECLARE_AST_NODE(ast_node, ast_node)
 };
+
+template <typename T>
+std::shared_ptr<T> force_node_cast(std::shared_ptr<ast_node> node)
+{
+	return std::static_pointer_cast<T>(node);
+}
+
+template <typename T>
+std::shared_ptr<T> node_cast(std::shared_ptr<ast_node> node)
+{
+	if (node->is_type(T::static_type))
+		return force_node_cast<T>(node);
+
+	return nullptr;
+}
 
 class super_node : public ast_node
 {

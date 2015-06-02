@@ -56,12 +56,11 @@ void consolidation_visitor::visit(super_node* node)
 		auto current_node = node->children[i];
 		current_node->accept(*this);
 
-		if (last_node->is_type(node_type::assign_expr_node) && 
-			current_node->is_type(node_type::assign_expr_node))
-		{
-			auto last_assign = std::static_pointer_cast<assign_expr_node>(last_node);
-			auto current_assign = std::static_pointer_cast<assign_expr_node>(current_node);
+		auto last_assign = node_cast<assign_expr_node>(last_node);
+		auto current_assign = node_cast<assign_expr_node>(current_node);
 
+		if (last_assign && current_assign)
+		{
 			roll_visitor.rewrote = false;
 			roll_visitor.last_node = last_assign;
 			current_assign->rhs->accept(roll_visitor);
