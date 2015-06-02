@@ -14,23 +14,19 @@ void recursive_visitor::visit(super_node* node)
 		child->accept(*this);
 }
 
+void recursive_visitor::visit(assign_stmt_node* node)
+{
+	node->lhs->accept(*this);
+	node->rhs->accept(*this);
+}
+
 void recursive_visitor::visit(dynamic_index_node* node)
 {
 	node->index->accept(*this);
 	node->value->accept(*this);
 }
 
-void recursive_visitor::visit(mask_node* node)
-{
-	node->value->accept(*this);
-}
-
-void recursive_visitor::visit(scalar_node* node)
-{
-	node->value->accept(*this);
-}
-
-void recursive_visitor::visit(swizzle_node* node)
+void recursive_visitor::visit(static_index_node* node)
 {
 	node->value->accept(*this);
 }
@@ -53,8 +49,7 @@ void recursive_visitor::visit(comparison_node* node)
 {
 	node->value->accept(*this);
 	
-	for (auto child : node->children)
-		child->accept(*this);
+	this->visit(static_cast<comparison_node::base_class*>(node));
 }
 
 void recursive_visitor::visit(call_expr_node* node)

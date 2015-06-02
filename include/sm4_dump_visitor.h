@@ -14,11 +14,10 @@ public:
 
 	virtual void visit(ast_node* node);
 	virtual void visit(super_node* node);
+	virtual void visit(assign_stmt_node* node);
 
 	virtual void visit(dynamic_index_node* node);
-	virtual void visit(mask_node* node);
-	virtual void visit(scalar_node* node);
-	virtual void visit(swizzle_node* node);
+	virtual void visit(static_index_node* node);
 
 	virtual void visit(constant_node* node);
 	virtual void visit(global_variable_node* node);

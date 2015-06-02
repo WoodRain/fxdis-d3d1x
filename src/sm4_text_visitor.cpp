@@ -5,11 +5,8 @@
 
 namespace sm4 {
 
-// I don't even give a fuck
 std::string sanitized_node_type(ast_node* node)
 {
-	// thanks, VS, you just saved me from your own stupidity
-	// fu
 	std::string ret = node->get_type_string();
 	ret = ret.substr(0, ret.find("_node"));
 	return ret;
@@ -53,6 +50,16 @@ void text_visitor::visit(super_node* node)
 	write_newline();
 }
 
+void text_visitor::visit(assign_stmt_node* node)
+{
+	write_spaces();
+	node->lhs->accept(*this);
+	stream_ << " = ";
+	node->rhs->accept(*this);
+	stream_ << ";";
+	write_newline();
+}
+
 void text_visitor::visit(dynamic_index_node* node)
 {
 	node->value->accept(*this);
@@ -61,21 +68,7 @@ void text_visitor::visit(dynamic_index_node* node)
 	stream_ << "]";
 }
 
-void text_visitor::visit(mask_node* node)
-{
-	node->value->accept(*this);
-	stream_ << ".";
-	for (auto index : node->indices)
-		stream_ << "xyzw"[index];
-}
-
-void text_visitor::visit(scalar_node* node)
-{
-	node->value->accept(*this);
-	stream_ << "." << "xyzw"[node->index];
-}
-
-void text_visitor::visit(swizzle_node* node)
+void text_visitor::visit(static_index_node* node)
 {
 	node->value->accept(*this);
 	stream_ << ".";
@@ -236,28 +229,51 @@ void text_visitor::visit(sub_expr_node* node)
 	node->rhs->accept(*this);
 }
 
+bool requires_brackets(std::shared_ptr<ast_node> node)
+{
+	return node->is_type(node_type::add_expr_node) || node->is_type(node_type::sub_expr_node);
+}
+
 void text_visitor::visit(mul_expr_node* node)
 {
+	if (requires_brackets(node->lhs))
+		stream_ << "(";
+
 	node->lhs->accept(*this);
+
+	if (requires_brackets(node->lhs))
+		stream_ << ")";
+
 	stream_ << " * ";
+
+	if (requires_brackets(node->rhs))
+		stream_ << "(";
+
 	node->rhs->accept(*this);
+
+	if (requires_brackets(node->rhs))
+		stream_ << ")";
 }
 
 void text_visitor::visit(div_expr_node* node)
 {
-	node->lhs->accept(*this);
-	stream_ << " / ";
-	node->rhs->accept(*this);
-}
+	if (requires_brackets(node->lhs))
+		stream_ << "(";
 
-void text_visitor::visit(assign_expr_node* node)
-{
-	write_spaces();
 	node->lhs->accept(*this);
-	stream_ << " = ";
+
+	if (requires_brackets(node->lhs))
+		stream_ << ")";
+
+	stream_ << " / ";
+
+	if (requires_brackets(node->rhs))
+		stream_ << "(";
+
 	node->rhs->accept(*this);
-	stream_ << ";";
-	write_newline();
+
+	if (requires_brackets(node->rhs))
+		stream_ << ")";
 }
 
 }

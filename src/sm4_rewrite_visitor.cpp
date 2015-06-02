@@ -1,4 +1,5 @@
 #include "sm4_rewrite_visitor.h"
+#include "sm4_text_visitor.h"
 #include "sm4.h"
 #include <iostream>
 #include <string>
@@ -19,7 +20,9 @@ void rewrite_instruction_call_expr_node(std::shared_ptr<ast_node>& node)
 	// rewrite rsq(a) to rsqrt(a)
 	else if (inst_node->opcode == SM4_OPCODE_RSQ)
 	{
-		node = std::make_shared<function_call_expr_node>("rsqrt", args[0]);
+		auto new_node = std::make_shared<function_call_expr_node>("rsqrt", args[0]);
+		new_node->stored_in = node->stored_in;
+		node = new_node;
 	}
 	// rewrite add(a,b) to a + b
 	else if (inst_node->opcode == SM4_OPCODE_ADD || inst_node->opcode == SM4_OPCODE_IADD)
@@ -27,6 +30,7 @@ void rewrite_instruction_call_expr_node(std::shared_ptr<ast_node>& node)
 		auto new_node = std::make_shared<add_expr_node>();
 		new_node->lhs = args[0];
 		new_node->rhs = args[1];
+		new_node->stored_in = node->stored_in;
 
 		node = new_node;
 	}
@@ -36,6 +40,7 @@ void rewrite_instruction_call_expr_node(std::shared_ptr<ast_node>& node)
 		auto new_node = std::make_shared<mul_expr_node>();
 		new_node->lhs = args[0];
 		new_node->rhs = args[1];
+		new_node->stored_in = node->stored_in;
 
 		node = new_node;
 	}
@@ -45,6 +50,7 @@ void rewrite_instruction_call_expr_node(std::shared_ptr<ast_node>& node)
 		auto new_node = std::make_shared<div_expr_node>();
 		new_node->lhs = args[0];
 		new_node->rhs = args[1];
+		new_node->stored_in = node->stored_in;
 
 		node = new_node;
 	}
@@ -53,7 +59,9 @@ void rewrite_instruction_call_expr_node(std::shared_ptr<ast_node>& node)
 			inst_node->opcode == SM4_OPCODE_DP3 || 
 			inst_node->opcode == SM4_OPCODE_DP4)
 	{
-		node = std::make_shared<function_call_expr_node>("dot", args[0], args[1]);
+		auto new_node = std::make_shared<function_call_expr_node>("dot", args[0], args[1]);
+		new_node->stored_in = node->stored_in;
+		node = new_node;
 	}
 	// rewrite mad(a,b,c) to a*b + c
 	else if (inst_node->opcode == SM4_OPCODE_MAD)
@@ -65,6 +73,8 @@ void rewrite_instruction_call_expr_node(std::shared_ptr<ast_node>& node)
 		auto new_add_expr_node = std::make_shared<add_expr_node>();
 		new_add_expr_node->lhs = new_mul_node;
 		new_add_expr_node->rhs = args[2];
+
+		new_add_expr_node->stored_in = node->stored_in;
 
 		node = new_add_expr_node;
 	}
@@ -80,15 +90,17 @@ void rewrite_add_expr_node(std::shared_ptr<ast_node>& node)
 		auto new_node = std::make_shared<sub_expr_node>();
 		new_node->lhs = old_add_expr_node->lhs;
 		new_node->rhs = rhs_negate_node->value;
+		new_node->stored_in = old_add_expr_node->stored_in;
 
 		node = new_node;
 	}
 	// rewrite -a + b to b - a
-	else if (auto lhs_negate_node = node_cast<negate_node>(old_add_expr_node->rhs))
+	else if (auto lhs_negate_node = node_cast<negate_node>(old_add_expr_node->lhs))
 	{	
 		auto new_node = std::make_shared<sub_expr_node>();
 		new_node->lhs = old_add_expr_node->rhs;
 		new_node->rhs = lhs_negate_node->value;
+		new_node->stored_in = old_add_expr_node->stored_in;
 
 		node = new_node;
 	}
@@ -102,53 +114,37 @@ void rewrite_add_expr_node(std::shared_ptr<ast_node>& node)
 
 		// Absolute values on vector
 		if (is_negative)
+		{
 			for (auto value : rhs_vector_node->values)
 				value->absolute();
 
-		auto new_node = std::make_shared<sub_expr_node>();
-		new_node->lhs = old_add_expr_node->lhs;
-		new_node->rhs = old_add_expr_node->rhs;
+			auto new_node = std::make_shared<sub_expr_node>();
+			new_node->lhs = old_add_expr_node->lhs;
+			new_node->rhs = old_add_expr_node->rhs;
+			new_node->stored_in = old_add_expr_node->stored_in;
 
-		node = new_node;
+			node = new_node;
+		}
 	}
 	// rewrite a + a to 2 * a
 	else if (old_add_expr_node->lhs == old_add_expr_node->rhs)
 	{
 		auto new_mul_node = std::make_shared<mul_expr_node>();
 
-		auto new_vector_node = std::make_shared<vector_node>();
-		
-		auto new_constant_node = std::make_shared<constant_node>();
-		new_constant_node->f32 = 2.0f;
-		new_constant_node->current_type = constant_node::type::f32;
-
-		new_vector_node->values.push_back(new_constant_node);
-
-		new_mul_node->lhs = new_vector_node;
+		new_mul_node->lhs = std::make_shared<vector_node>(2.0f);
 		new_mul_node->rhs = old_add_expr_node->lhs;
+		new_mul_node->stored_in = old_add_expr_node->stored_in;
 
 		node = new_mul_node;
 	}
 }
 
-void rewrite_mask_node(std::shared_ptr<ast_node>& node)
+void rewrite_static_index_node(std::shared_ptr<ast_node>& node)
 {
-	auto old_mask_node = force_node_cast<mask_node>(node);
+	auto old_static_index_node = force_node_cast<static_index_node>(node);
+	auto& indices = old_static_index_node->indices;
 
-	// rewrite all mask_nodes to single-element swizzle_nodes
-	auto new_node = std::make_shared<swizzle_node>();
-	new_node->value = old_mask_node->value;
-	new_node->indices = old_mask_node->indices;
-
-	node = new_node;
-}
-
-void rewrite_swizzle_node(std::shared_ptr<ast_node>& node)
-{
-	auto old_swizzle_node = force_node_cast<swizzle_node>(node);
-	auto& indices = old_swizzle_node->indices;
-
-	// swizzle_node where all the elements are the same? rewrite to single-element swizzle_node
+	// static_index_node where all the elements are the same? rewrite to single-element static_index_node
 	auto first_index = indices.front();
 	bool same = true;
 
@@ -161,28 +157,51 @@ void rewrite_swizzle_node(std::shared_ptr<ast_node>& node)
 	// if the first and last index are the same, drop the last one
 	// xyzx -> xyz
 	if (indices.size() > 1 && (indices.front() == indices.back()))
-	{
 		indices.pop_back();
-	}
 }
 
-void rewrite_scalar_node(std::shared_ptr<ast_node>& node)
+void rewrite_mul_expr_node(std::shared_ptr<ast_node>& node)
 {
-	// rewrite all scalar_nodes to single-element swizzle_nodes
-	auto old_scalar_node = force_node_cast<scalar_node>(node);
+	auto old_mul_node = force_node_cast<mul_expr_node>(node);
 
-	auto new_node = std::make_shared<swizzle_node>();
-	new_node->value = old_scalar_node->value;
-	new_node->indices.push_back(old_scalar_node->index);
+	text_visitor visitor(std::cout);
 
-	node = new_node;
+	// rewrite 1/length(a) * a to normalize
+	auto rewrite_normalize = 
+	[&](std::shared_ptr<ast_node> lhs, std::shared_ptr<ast_node> rhs)
+	{
+		auto div_lhs = node_cast<div_expr_node>(lhs);
+		if (!div_lhs)
+			return;
+
+		auto dividend = node_cast<vector_node>(div_lhs->lhs);
+		if (!dividend || dividend->values[0]->f32 != 1.0f)
+			return;
+
+		auto divisor = node_cast<function_call_expr_node>(div_lhs->rhs);
+		if (!divisor || divisor->name != "length")
+			return;
+
+		auto argument = divisor->arguments[0];
+		if (*argument != *rhs)
+			return;
+
+		auto new_node = 
+			std::make_shared<function_call_expr_node>("normalize", rhs);
+		new_node->stored_in = old_mul_node->stored_in;
+
+		node = new_node;
+	};
+
+	rewrite_normalize(old_mul_node->lhs, old_mul_node->rhs);
+	rewrite_normalize(old_mul_node->rhs, old_mul_node->lhs);
 }
 
 void rewrite_function_call_expr_node(std::shared_ptr<ast_node>& node)
 {
 	auto old_fc_node = force_node_cast<function_call_expr_node>(node);
 
-	// rewrite rsqrt(dot(x, x)) to length(x)
+	// rewrite rsqrt(dot(x, x)) to 1/length(x)
 	if (old_fc_node->name == "rsqrt")
 	{
 		auto argument_node = old_fc_node->arguments.front();
@@ -194,7 +213,16 @@ void rewrite_function_call_expr_node(std::shared_ptr<ast_node>& node)
 				auto argument2 = nested_fc_node->arguments[1];
 
 				if (*argument1 == *argument2)
-					node = std::make_shared<function_call_expr_node>("length", argument1);
+				{
+					auto new_length_node = std::make_shared<function_call_expr_node>("length", argument1);
+					new_length_node->stored_in = node->stored_in;
+
+					auto new_div_node = std::make_shared<div_expr_node>();
+					new_div_node->lhs = std::make_shared<vector_node>(1.0f);
+					new_div_node->rhs = new_length_node;
+
+					node = new_div_node;
+				}
 			}
 		}
 	}
@@ -202,23 +230,29 @@ void rewrite_function_call_expr_node(std::shared_ptr<ast_node>& node)
 	
 void rewrite_node(std::shared_ptr<ast_node>& node)
 {
-	if (node->is_type(node_type::mask_node))
-		rewrite_mask_node(node);
-
-	if (node->is_type(node_type::scalar_node))
-		rewrite_scalar_node(node);
-
-	if (node->is_type(node_type::swizzle_node))
-		rewrite_swizzle_node(node);
+	if (node->is_type(node_type::static_index_node))
+		rewrite_static_index_node(node);
 
 	if (node->is_type(node_type::instruction_call_expr_node))
 		rewrite_instruction_call_expr_node(node);
 
 	if (node->is_type(node_type::add_expr_node))
-		rewrite_add_expr_node(node);
+		rewrite_add_expr_node(node);	
 
 	if (node->is_type(node_type::function_call_expr_node))
 		rewrite_function_call_expr_node(node);
+
+	if (node->is_type(node_type::mul_expr_node))
+		rewrite_mul_expr_node(node);
+}
+
+void rewrite_visitor::visit(assign_stmt_node* node)
+{
+	rewrite_node(node->lhs);
+	rewrite_node(node->rhs);
+
+	node->lhs->accept(*this);
+	node->rhs->accept(*this);
 }
 
 void rewrite_visitor::visit(unary_expr_node* node)

@@ -19,6 +19,7 @@ typedef sm4_op operand;
 	/* General */ \
 	AST_NODE_CLASS(ast_node) \
 	AST_NODE_CLASS(super_node) \
+	AST_NODE_CLASS(assign_stmt_node) \
 	/* Constants, variables */ \
 	AST_NODE_CLASS(constant_node) \
 	AST_NODE_CLASS(global_variable_node) \
@@ -28,31 +29,30 @@ typedef sm4_op operand;
 	AST_NODE_CLASS(immediate_constant_buffer_node) \
 	AST_NODE_CLASS(input_node) \
 	AST_NODE_CLASS(output_node) \
-	/* Function calls */ \
-	AST_NODE_CLASS(call_expr_node) \
-	AST_NODE_CLASS(function_call_expr_node) \
-	AST_NODE_CLASS(instruction_call_expr_node) \
 	/* Indexing */ \
 	AST_NODE_CLASS(variable_access_node) \
-	AST_NODE_CLASS(mask_node) \
-	AST_NODE_CLASS(swizzle_node) \
-	AST_NODE_CLASS(scalar_node) \
+	AST_NODE_CLASS(static_index_node) \
 	AST_NODE_CLASS(dynamic_index_node) \
 	/* Comparison */ \
 	AST_NODE_CLASS(comparison_node) \
-	/* Instruction nodes */ \
-	AST_NODE_CLASS(unary_expr_node) \
 	AST_NODE_CLASS(if_node) \
 	AST_NODE_CLASS(else_node) \
 	AST_NODE_CLASS(ret_node) \
+	/* Expressions */ \
+	AST_NODE_CLASS(expr_node) \
+	/* Call expression nodes */ \
+	AST_NODE_CLASS(call_expr_node) \
+	AST_NODE_CLASS(function_call_expr_node) \
+	AST_NODE_CLASS(instruction_call_expr_node) \
+	/* Unary expression nodes */ \
+	AST_NODE_CLASS(unary_expr_node) \
 	AST_NODE_CLASS(negate_node) \
-	/* Rewritten expressions */ \
+	/* Binary expression nodes */ \
 	AST_NODE_CLASS(binary_expr_node) \
 	AST_NODE_CLASS(add_expr_node) \
 	AST_NODE_CLASS(sub_expr_node) \
 	AST_NODE_CLASS(mul_expr_node) \
-	AST_NODE_CLASS(div_expr_node) \
-	AST_NODE_CLASS(assign_expr_node)
+	AST_NODE_CLASS(div_expr_node)
 
 #define AST_NODE_CLASS(klass) class klass;
 AST_NODE_CLASSES
@@ -92,9 +92,17 @@ public:
 	virtual ~ast_node() {};
 	bool is_type(node_type type) const { return this->get_type() == type; }
 
+	// dodgy hack that stores the variable in which this node is contained
+	std::shared_ptr<ast_node> stored_in;
+
 	virtual bool operator==(ast_node const&) 
 	{ 
 		return false; 
+	}
+
+	bool operator!=(ast_node const& rhs)
+	{
+		return !(*this == rhs);
 	}
 
 	DECLARE_AST_NODE(ast_node, ast_node)
@@ -109,6 +117,9 @@ std::shared_ptr<T> force_node_cast(std::shared_ptr<ast_node> node)
 template <typename T>
 std::shared_ptr<T> node_cast(std::shared_ptr<ast_node> node)
 {
+	if (!node)
+		return nullptr;
+
 	if (node->is_type(T::static_type))
 		return force_node_cast<T>(node);
 
@@ -136,68 +147,103 @@ public:
 	}
 };
 
+class assign_stmt_node : public ast_node
+{
+public:
+	assign_stmt_node() {}
+	assign_stmt_node(std::shared_ptr<ast_node> lhs, std::shared_ptr<ast_node> rhs)
+	{
+		this->set_lhs(lhs);
+		this->set_rhs(rhs);
+	}
+
+	void set_lhs(std::shared_ptr<ast_node> lhs)
+	{
+		this->lhs = lhs;
+		if (this->rhs)
+			this->rhs->stored_in = this->lhs;
+	}
+
+	void set_rhs(std::shared_ptr<ast_node> rhs)
+	{
+		this->rhs = rhs;
+		this->rhs->stored_in = this->lhs;
+	}
+
+	std::shared_ptr<ast_node> lhs;
+	std::shared_ptr<ast_node> rhs;
+
+	DECLARE_AST_NODE(assign_stmt_node, ast_node)
+};
+
 // types
 class constant_node : public ast_node
 {
 public:
+	constant_node() {};
+
 	virtual ~constant_node() {};
 	DECLARE_AST_NODE(constant_node, ast_node)
 
+#define SIGNED_TYPES \
+	CONSTANT_TYPE(float, f32) \
+	CONSTANT_TYPE(int32_t, i32) \
+	CONSTANT_TYPE(double, f64) \
+	CONSTANT_TYPE(int64_t, i64) \
+
+#define CONSTANT_TYPES \
+	SIGNED_TYPES \
+	CONSTANT_TYPE(uint32_t, u32) \
+	CONSTANT_TYPE(uint64_t, u64)
+
+#define CONSTANT_TYPE(cpp_type, enum_type) \
+	constant_node(cpp_type value) \
+	{ \
+		this->enum_type = value; \
+		this->current_type = type::enum_type; \
+	}
+
+	CONSTANT_TYPES
+
+#undef CONSTANT_TYPE
+#define CONSTANT_TYPE(cpp_type, enum_type) \
+	enum_type,
+
 	enum class type
 	{
-		f32,
-		i32,
-		u32,
-
-		f64,
-		i64,
-		u64
+		CONSTANT_TYPES
 	} current_type;
+
+#undef CONSTANT_TYPE
+#define CONSTANT_TYPE(cpp_type, enum_type) \
+	cpp_type enum_type;
 
 	union
 	{
-		float f32;
-		int32_t i32;
-		uint32_t u32;
-
-		double f64;
-		int64_t i64;
-		uint64_t u64;
+		CONSTANT_TYPES
 	};
+
+#undef CONSTANT_TYPE
+#define CONSTANT_TYPE(cpp_type, enum_type) \
+	case type::enum_type: this->enum_type = abs(this->enum_type); break;
 
 	void absolute()
 	{
 		switch (this->current_type)
 		{
-		case type::f32:
-			this->f32 = abs(this->f32);
-			break;
-		case type::i32:
-			this->i32 = abs(this->i32);
-			break;
-		case type::f64:
-			this->f64 = abs(this->f64);
-			break;
-		case type::i64:
-			this->i64 = abs(this->i64);
-			break;
-		default:
-			break;
+			SIGNED_TYPES
 		}
 	}
+
+#undef CONSTANT_TYPE
+#define CONSTANT_TYPE(cpp_type, enum_type) \
+	case type::enum_type: return this->enum_type <= 0;
 
 	bool is_negative()
 	{
 		switch (this->current_type)
 		{
-		case type::f32:
-			return this->f32 <= 0;
-		case type::i32:
-			return this->i32 <= 0;
-		case type::f64:
-			return this->f64 <= 0;
-		case type::i64:
-			return this->i64 <= 0;
+			SIGNED_TYPES
 		default:
 			return true;
 		}
@@ -209,7 +255,7 @@ public:
 		{
 		case type::f32:
 		case type::i32:
-		case type::f64:
+		case type::u32:
 			return false;
 		default:
 			return true;
@@ -228,6 +274,10 @@ public:
 					(this->u64 == typed_rhs.u64) : 
 					(this->u32 == typed_rhs.u32);
 	}
+
+#undef CONSTANT_TYPE
+#undef CONSTANT_TYPES
+#undef SIGNED_TYPES
 };
 
 class global_variable_node : public ast_node
@@ -274,6 +324,12 @@ DEFINE_DERIVED_GLOBAL_VARIABLE_NODE(output_node)
 class vector_node : public ast_node
 {
 public:
+	template <typename... Values>
+	vector_node(Values&&... args)
+	{
+		this->push_back(args...);
+	}
+
 	virtual ~vector_node() {};
 	DECLARE_AST_NODE(vector_node, ast_node)
 
@@ -287,6 +343,30 @@ public:
 		auto typed_rhs = static_cast<vector_node const&>(rhs);
 
 		return	(this->values == typed_rhs.values);
+	}
+
+protected:
+	void push_back()
+	{
+	}
+
+	template <typename Value>
+	void push_back_value(Value value)
+	{
+		this->values.push_back(std::make_shared<constant_node>(value));
+	}
+
+	template <typename Value>
+	void push_back(Value value)
+	{
+		push_back_value(value);
+	}
+
+	template <typename Value, typename... Values>
+	void push_back(Value&& arg, Values&&... args)
+	{
+		push_back_value(arg);
+		push_back(args...);
 	}
 };
 
@@ -310,11 +390,11 @@ public:
 	}
 };
 
-class mask_node : public variable_access_node
+class static_index_node : public variable_access_node
 {
 public:
-	virtual ~mask_node() {};
-	DECLARE_AST_NODE(mask_node, variable_access_node)
+	virtual ~static_index_node() {};
+	DECLARE_AST_NODE(static_index_node, variable_access_node)
 
 	std::vector<uint8_t> indices;
 
@@ -323,50 +403,10 @@ public:
 		if (!rhs.is_type(this->get_type()))
 			return false;
 
-		auto typed_rhs = static_cast<mask_node const&>(rhs);
+		auto typed_rhs = static_cast<static_index_node const&>(rhs);
 
 		return	(*this->value == *typed_rhs.value) && 
 				(this->indices == typed_rhs.indices);
-	}
-};
-
-class swizzle_node : public variable_access_node
-{
-public:
-	virtual ~swizzle_node() {};
-	DECLARE_AST_NODE(swizzle_node, variable_access_node)
-
-	std::vector<uint8_t> indices;
-
-	virtual bool operator==(ast_node const& rhs) 
-	{ 
-		if (!rhs.is_type(this->get_type()))
-			return false;
-
-		auto typed_rhs = static_cast<swizzle_node const&>(rhs);
-
-		return	(*this->value == *typed_rhs.value) && 
-				(this->indices == typed_rhs.indices);
-	}
-};
-
-class scalar_node : public variable_access_node
-{
-public:
-	virtual ~scalar_node() {};
-	DECLARE_AST_NODE(scalar_node, variable_access_node)
-
-	uint8_t index;
-
-	virtual bool operator==(ast_node const& rhs) 
-	{ 
-		if (!rhs.is_type(this->get_type()))
-			return false;
-
-		auto typed_rhs = static_cast<scalar_node const&>(rhs);
-
-		return	(*this->value == *typed_rhs.value) && 
-				(this->index == typed_rhs.index);
 	}
 };
 
@@ -390,12 +430,56 @@ public:
 	}
 };
 
-// function call
-class call_expr_node : public ast_node
+// comparison
+class comparison_node : public super_node
+{
+public:
+	virtual ~comparison_node() {};
+	DECLARE_AST_NODE(comparison_node, super_node)
+
+	std::shared_ptr<ast_node> value;
+	bool not_zero;
+
+	virtual bool operator==(ast_node const& rhs) 
+	{ 
+		if (!rhs.is_type(this->get_type()))
+			return false;
+
+		auto typed_rhs = static_cast<comparison_node const&>(rhs);
+
+		return	(*this->value == *typed_rhs.value) &&
+				(this->not_zero == typed_rhs.not_zero);
+	}
+};
+
+DEFINE_DERIVED_AST_NODE(if_node, comparison_node)
+DEFINE_DERIVED_AST_NODE(else_node, super_node)
+DEFINE_DERIVED_AST_NODE(ret_node, ast_node)
+
+// expressions
+class expr_node : public ast_node
+{
+public:
+	expr_node() {}
+	DECLARE_AST_NODE(expr_node, ast_node)
+
+	virtual ~expr_node() {};
+
+	virtual bool operator==(ast_node const& rhs) 
+	{ 
+		if (!rhs.is_type(this->get_type()))
+			return false;
+
+		return true;
+	}
+};
+
+// call expressions
+class call_expr_node : public expr_node
 {
 public:
 	call_expr_node() {}
-	DECLARE_AST_NODE(call_expr_node, ast_node)
+	DECLARE_AST_NODE(call_expr_node, expr_node)
 
 	virtual ~call_expr_node() {};
 
@@ -483,40 +567,12 @@ public:
 	uint8_t opcode;
 };
 
-// comparison
-class comparison_node : public super_node
-{
-public:
-	virtual ~comparison_node() {};
-	DECLARE_AST_NODE(comparison_node, ast_node)
-
-	std::shared_ptr<ast_node> value;
-	bool not_zero;
-
-	virtual bool operator==(ast_node const& rhs) 
-	{ 
-		if (!rhs.is_type(this->get_type()))
-			return false;
-
-		auto typed_rhs = static_cast<comparison_node const&>(rhs);
-
-		return	(*this->value == *typed_rhs.value) &&
-				(this->not_zero == typed_rhs.not_zero);
-	}
-};
-
-DEFINE_DERIVED_AST_NODE(if_node, comparison_node)
-
-// nullary
-DEFINE_DERIVED_AST_NODE(else_node, super_node)
-DEFINE_DERIVED_AST_NODE(ret_node, ast_node)
-
-// unary
-class unary_expr_node : public ast_node
+// unary expressions
+class unary_expr_node : public expr_node
 {
 public:
 	virtual ~unary_expr_node() {};
-	DECLARE_AST_NODE(unary_expr_node, ast_node)
+	DECLARE_AST_NODE(unary_expr_node, expr_node)
 
 	std::shared_ptr<ast_node> value;
 
@@ -533,12 +589,17 @@ public:
 
 DEFINE_DERIVED_AST_NODE(negate_node, unary_expr_node)
 
-// fun stuff! actual operators!
-class binary_expr_node : public ast_node
+class binary_expr_node : public expr_node
 {
 public:
+	binary_expr_node() {}
+	binary_expr_node(std::shared_ptr<ast_node> lhs, std::shared_ptr<ast_node> rhs) :
+		lhs(lhs), rhs(rhs)
+	{
+	}
+
 	virtual ~binary_expr_node() {}
-	DECLARE_AST_NODE(binary_expr_node, ast_node)
+	DECLARE_AST_NODE(binary_expr_node, expr_node)
 
 	std::shared_ptr<ast_node> lhs;
 	std::shared_ptr<ast_node> rhs;
@@ -555,11 +616,22 @@ public:
 	}
 };
 
-DEFINE_DERIVED_AST_NODE(add_expr_node, binary_expr_node)
-DEFINE_DERIVED_AST_NODE(sub_expr_node, binary_expr_node)
-DEFINE_DERIVED_AST_NODE(mul_expr_node, binary_expr_node)
-DEFINE_DERIVED_AST_NODE(div_expr_node, binary_expr_node)
-DEFINE_DERIVED_AST_NODE(assign_expr_node, binary_expr_node)
+#define DEFINE_DERIVED_BINARY_EXPR_NODE(node_name) \
+	class node_name : public binary_expr_node \
+	{ \
+	public: \
+		node_name() {} \
+		node_name(std::shared_ptr<ast_node> lhs, std::shared_ptr<ast_node> rhs) : \
+			binary_expr_node(lhs, rhs) \
+		{ \
+		} \
+		DECLARE_AST_NODE(node_name, binary_expr_node) \
+	};
+
+DEFINE_DERIVED_BINARY_EXPR_NODE(add_expr_node)
+DEFINE_DERIVED_BINARY_EXPR_NODE(sub_expr_node)
+DEFINE_DERIVED_BINARY_EXPR_NODE(mul_expr_node)
+DEFINE_DERIVED_BINARY_EXPR_NODE(div_expr_node)
 
 std::shared_ptr<super_node> decompile(program const* p);
 

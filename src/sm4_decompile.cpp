@@ -91,7 +91,7 @@ std::shared_ptr<ast_node> decompile_operand(sm4::operand const* operand, sm4_opc
 
 		if (operand->mode == SM4_OPERAND_MODE_MASK && operand->mask)
 		{
-			auto parent_node = std::make_shared<mask_node>();
+			auto parent_node = std::make_shared<static_index_node>();
 			parent_node->value = gi_node;
 
 			for (unsigned int i = 0; i < operand->comps; ++i)
@@ -104,7 +104,7 @@ std::shared_ptr<ast_node> decompile_operand(sm4::operand const* operand, sm4_opc
 		}
 		else if (operand->mode == SM4_OPERAND_MODE_SWIZZLE)
 		{
-			auto parent_node = std::make_shared<swizzle_node>();
+			auto parent_node = std::make_shared<static_index_node>();
 			parent_node->value = gi_node;
 
 			for (unsigned int i = 0; i < operand->comps; ++i)
@@ -114,9 +114,9 @@ std::shared_ptr<ast_node> decompile_operand(sm4::operand const* operand, sm4_opc
 		}
 		else if (operand->mode == SM4_OPERAND_MODE_SCALAR)
 		{
-			auto parent_node = std::make_shared<scalar_node>();
+			auto parent_node = std::make_shared<static_index_node>();
 			parent_node->value = gi_node;
-			parent_node->index = operand->swizzle[0];
+			parent_node->indices.push_back(operand->swizzle[0]);
 
 			node = parent_node;
 		}
@@ -215,11 +215,12 @@ std::shared_ptr<super_node> decompile(program const* p)
 			node->opcode = instruction->opcode;
 			node->arguments.push_back(decompile_operand(instruction, 1));
 
-			auto new_assign_expr_node = std::make_shared<assign_expr_node>();
-			new_assign_expr_node->lhs = decompile_operand(instruction, 0);
-			new_assign_expr_node->rhs = saturate_if_necessary(instruction, node);
+			auto new_assign_stmt_node = std::make_shared<assign_stmt_node>(
+				decompile_operand(instruction, 0),
+				saturate_if_necessary(instruction, node)
+			);
 
-			root->children.push_back(new_assign_expr_node);
+			root->children.push_back(new_assign_stmt_node);
 			break;
 		}
 
@@ -244,11 +245,12 @@ std::shared_ptr<super_node> decompile(program const* p)
 			node->arguments.push_back(decompile_operand(instruction, 1));
 			node->arguments.push_back(decompile_operand(instruction, 2));
 
-			auto new_assign_expr_node = std::make_shared<assign_expr_node>();
-			new_assign_expr_node->lhs = decompile_operand(instruction, 0);
-			new_assign_expr_node->rhs = saturate_if_necessary(instruction, node);
+			auto new_assign_stmt_node = std::make_shared<assign_stmt_node>(
+				decompile_operand(instruction, 0),
+				saturate_if_necessary(instruction, node)
+			);
 
-			root->children.push_back(new_assign_expr_node);
+			root->children.push_back(new_assign_stmt_node);
 			break;
 		}
 
@@ -261,11 +263,12 @@ std::shared_ptr<super_node> decompile(program const* p)
 			node->arguments.push_back(decompile_operand(instruction, 2));
 			node->arguments.push_back(decompile_operand(instruction, 3));
 
-			auto new_assign_expr_node = std::make_shared<assign_expr_node>();
-			new_assign_expr_node->lhs = decompile_operand(instruction, 0);
-			new_assign_expr_node->rhs = saturate_if_necessary(instruction, node);
+			auto new_assign_stmt_node = std::make_shared<assign_stmt_node>(
+				decompile_operand(instruction, 0),
+				saturate_if_necessary(instruction, node)
+			);
 
-			root->children.push_back(new_assign_expr_node);
+			root->children.push_back(new_assign_stmt_node);
 			break;
 		}
 

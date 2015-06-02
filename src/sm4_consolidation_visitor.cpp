@@ -2,6 +2,7 @@
 #include "sm4.h"
 #include <iostream>
 #include <string>
+#include <unordered_set>
 
 namespace sm4 {
 
@@ -17,9 +18,10 @@ void consolidation_visitor::visit(super_node* node)
 	public:
 		void rewrite(std::shared_ptr<ast_node>& node)
 		{
-			// if the last node's lhs is equal to this node,
+			// if the last node's stored in is equal to this node,
 			// replace the node with the last node's rhs
-			if (*last_node->lhs == *node)
+			auto rhs_stored_in = node_cast<static_index_node>(last_node->rhs->stored_in);
+			if (rhs_stored_in && (*rhs_stored_in == *node))
 			{
 				node = last_node->rhs;
 				this->rewrote = true;
@@ -28,23 +30,35 @@ void consolidation_visitor::visit(super_node* node)
 
 		virtual void visit(unary_expr_node* node)
 		{
+			node->value->accept(*this);
 			this->rewrite(node->value);
 		}
 
 		virtual void visit(call_expr_node* node)
 		{
+			std::unordered_set<std::shared_ptr<ast_node>*> arguments;
+
+			// Insert all arguments into the set. If it shows up more than once,
+			// we have a dupe, and we shouldn't collapse this.
 			for (auto& argument : node->arguments)
-				this->rewrite(argument);
+				if (!arguments.insert(&argument).second)
+					return;
+
+			for (auto argument : arguments)
+				this->rewrite(*argument);
 		}
 		
 		virtual void visit(binary_expr_node* node)
 		{
+			node->lhs->accept(*this);
+			node->rhs->accept(*this);
+
 			this->rewrite(node->lhs);
 			this->rewrite(node->rhs);
 		}
 
 		bool rewrote = false;
-		std::shared_ptr<assign_expr_node> last_node;
+		std::shared_ptr<assign_stmt_node> last_node;
 	} roll_visitor;
 
 	std::vector<size_t> to_remove;
@@ -54,8 +68,8 @@ void consolidation_visitor::visit(super_node* node)
 		auto current_node = node->children[i];
 		current_node->accept(*this);
 
-		auto last_assign = node_cast<assign_expr_node>(last_node);
-		auto current_assign = node_cast<assign_expr_node>(current_node);
+		auto last_assign = node_cast<assign_stmt_node>(last_node);
+		auto current_assign = node_cast<assign_stmt_node>(current_node);
 
 		if (last_assign && current_assign)
 		{

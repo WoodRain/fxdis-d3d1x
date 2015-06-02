@@ -35,6 +35,18 @@ void dump_visitor::visit(super_node* node)
 	--depth_;
 }
 
+void dump_visitor::visit(assign_stmt_node* node)
+{
+	write_spaces();
+	stream_ << node->get_type_string();
+	write_newline();
+
+	++depth_;
+	node->lhs->accept(*this);
+	node->rhs->accept(*this);
+	--depth_;
+}
+
 void dump_visitor::visit(dynamic_index_node* node)
 {
 	write_spaces();
@@ -47,34 +59,7 @@ void dump_visitor::visit(dynamic_index_node* node)
 	--depth_;
 }
 
-void dump_visitor::visit(mask_node* node)
-{
-	write_spaces();
-	stream_ << node->get_type_string();
-	stream_ << " (";
-	for (auto index : node->indices)
-		stream_ << "xyzw"[index];
-	stream_ << ")";
-	write_newline();
-
-	++depth_;
-	node->value->accept(*this);
-	--depth_;
-}
-
-void dump_visitor::visit(scalar_node* node)
-{
-	write_spaces();
-	stream_ << node->get_type_string();
-	stream_ << " (" << "xyzw"[node->index] << ")";
-	write_newline();
-
-	++depth_;
-	node->value->accept(*this);
-	--depth_;
-}
-
-void dump_visitor::visit(swizzle_node* node)
+void dump_visitor::visit(static_index_node* node)
 {
 	write_spaces();
 	stream_ << node->get_type_string();
@@ -149,6 +134,8 @@ void dump_visitor::visit(comparison_node* node)
 
 	++depth_;
 	node->value->accept(*this);
+	for (auto child : node->children)
+		child->accept(*this);
 	--depth_;
 }
 

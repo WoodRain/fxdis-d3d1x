@@ -142,14 +142,16 @@ int main(int argc, char** argv)
 		
 		if (process)
 		{
-			// pass 1
-			sm4::rewrite_visitor sub_visitor;
-			root_node->accept(sub_visitor);
-
 			sm4::consolidation_visitor cons_visitor;
-			root_node->accept(cons_visitor);
+			sm4::rewrite_visitor sub_visitor;
 
+			// pass 1
+			root_node->accept(cons_visitor);
+			root_node->accept(sub_visitor);
 			// pass 2
+			root_node->accept(cons_visitor);
+			root_node->accept(sub_visitor);
+			// pass 3
 			root_node->accept(sub_visitor);
 		}
 
