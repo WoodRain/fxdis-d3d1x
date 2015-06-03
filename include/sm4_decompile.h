@@ -121,9 +121,6 @@ public:
 	virtual ~ast_node() {};
 	bool is_type(node_type type) const { return this->get_type() == type; }
 
-	// dodgy hack that stores the variable in which this node is contained
-	std::shared_ptr<ast_node> stored_in;
-
 	virtual bool operator==(ast_node const&) 
 	{ 
 		return false; 
@@ -276,14 +273,11 @@ public:
 	void set_lhs(std::shared_ptr<ast_node> lhs)
 	{
 		this->lhs = lhs;
-		if (this->rhs)
-			this->rhs->stored_in = this->lhs;
 	}
 
 	void set_rhs(std::shared_ptr<ast_node> rhs)
 	{
 		this->rhs = rhs;
-		this->rhs->stored_in = this->lhs;
 	}
 
 	std::shared_ptr<ast_node> lhs;

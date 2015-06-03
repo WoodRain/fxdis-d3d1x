@@ -54,9 +54,6 @@
     <ClCompile Include="src\sm4_rewrite_visitor.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\sm4_consolidate_visitor.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\dxbc.h">
@@ -87,9 +84,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="include\sm4_rewrite_visitor.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="include\sm4_consolidate_visitor.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

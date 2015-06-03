@@ -21,7 +21,6 @@ void rewrite_instruction_call_expr_node(std::shared_ptr<ast_node>& node)
 	else if (inst_node->opcode == SM4_OPCODE_RSQ)
 	{
 		auto new_node = std::make_shared<function_call_expr_node>("rsqrt", args[0]);
-		new_node->stored_in = node->stored_in;
 		node = new_node;
 	}
 	// rewrite add(a,b) to a + b
@@ -30,7 +29,6 @@ void rewrite_instruction_call_expr_node(std::shared_ptr<ast_node>& node)
 		auto new_node = std::make_shared<add_expr_node>();
 		new_node->lhs = args[0];
 		new_node->rhs = args[1];
-		new_node->stored_in = node->stored_in;
 
 		node = new_node;
 	}
@@ -40,7 +38,6 @@ void rewrite_instruction_call_expr_node(std::shared_ptr<ast_node>& node)
 		auto new_node = std::make_shared<mul_expr_node>();
 		new_node->lhs = args[0];
 		new_node->rhs = args[1];
-		new_node->stored_in = node->stored_in;
 
 		node = new_node;
 	}
@@ -50,7 +47,6 @@ void rewrite_instruction_call_expr_node(std::shared_ptr<ast_node>& node)
 		auto new_node = std::make_shared<div_expr_node>();
 		new_node->lhs = args[0];
 		new_node->rhs = args[1];
-		new_node->stored_in = node->stored_in;
 
 		node = new_node;
 	}
@@ -60,7 +56,6 @@ void rewrite_instruction_call_expr_node(std::shared_ptr<ast_node>& node)
 			inst_node->opcode == SM4_OPCODE_DP4)
 	{
 		auto new_node = std::make_shared<function_call_expr_node>("dot", args[0], args[1]);
-		new_node->stored_in = node->stored_in;
 		node = new_node;
 	}
 	// rewrite mad(a,b,c) to a*b + c
@@ -73,8 +68,6 @@ void rewrite_instruction_call_expr_node(std::shared_ptr<ast_node>& node)
 		auto new_add_expr_node = std::make_shared<add_expr_node>();
 		new_add_expr_node->lhs = new_mul_node;
 		new_add_expr_node->rhs = args[2];
-
-		new_add_expr_node->stored_in = node->stored_in;
 
 		node = new_add_expr_node;
 	}
@@ -90,7 +83,6 @@ void rewrite_add_expr_node(std::shared_ptr<ast_node>& node)
 		auto new_node = std::make_shared<sub_expr_node>();
 		new_node->lhs = old_add_expr_node->lhs;
 		new_node->rhs = rhs_negate_node->value;
-		new_node->stored_in = old_add_expr_node->stored_in;
 
 		node = new_node;
 	}
@@ -100,7 +92,6 @@ void rewrite_add_expr_node(std::shared_ptr<ast_node>& node)
 		auto new_node = std::make_shared<sub_expr_node>();
 		new_node->lhs = old_add_expr_node->rhs;
 		new_node->rhs = lhs_negate_node->value;
-		new_node->stored_in = old_add_expr_node->stored_in;
 
 		node = new_node;
 	}
@@ -121,7 +112,6 @@ void rewrite_add_expr_node(std::shared_ptr<ast_node>& node)
 			auto new_node = std::make_shared<sub_expr_node>();
 			new_node->lhs = old_add_expr_node->lhs;
 			new_node->rhs = old_add_expr_node->rhs;
-			new_node->stored_in = old_add_expr_node->stored_in;
 
 			node = new_node;
 		}
@@ -133,7 +123,6 @@ void rewrite_add_expr_node(std::shared_ptr<ast_node>& node)
 
 		new_mul_node->lhs = std::make_shared<vector_node>(2.0f);
 		new_mul_node->rhs = old_add_expr_node->lhs;
-		new_mul_node->stored_in = old_add_expr_node->stored_in;
 
 		node = new_mul_node;
 	}
@@ -188,7 +177,6 @@ void rewrite_mul_expr_node(std::shared_ptr<ast_node>& node)
 
 		auto new_node = 
 			std::make_shared<function_call_expr_node>("normalize", rhs);
-		new_node->stored_in = old_mul_node->stored_in;
 
 		node = new_node;
 	};
@@ -215,7 +203,6 @@ void rewrite_function_call_expr_node(std::shared_ptr<ast_node>& node)
 				if (*argument1 == *argument2)
 				{
 					auto new_length_node = std::make_shared<function_call_expr_node>("length", argument1);
-					new_length_node->stored_in = node->stored_in;
 
 					auto new_div_node = std::make_shared<div_expr_node>();
 					new_div_node->lhs = std::make_shared<vector_node>(1.0f);

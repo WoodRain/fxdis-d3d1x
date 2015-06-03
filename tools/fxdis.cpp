@@ -30,7 +30,6 @@
 #include "sm4_dump_visitor.h"
 #include "sm4_text_visitor.h"
 #include "sm4_rewrite_visitor.h"
-#include "sm4_consolidate_visitor.h"
 
 #include <iostream>
 #include <fstream>
@@ -142,16 +141,9 @@ int main(int argc, char** argv)
 		
 		if (process)
 		{
-			sm4::consolidate_visitor cons_visitor;
 			sm4::rewrite_visitor sub_visitor;
 
 			// pass 1
-			root_node->accept(cons_visitor);
-			root_node->accept(sub_visitor);
-			// pass 2
-			root_node->accept(cons_visitor);
-			root_node->accept(sub_visitor);
-			// pass 3
 			root_node->accept(sub_visitor);
 		}
 
