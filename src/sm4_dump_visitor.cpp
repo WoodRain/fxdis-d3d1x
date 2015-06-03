@@ -84,22 +84,22 @@ void dump_visitor::visit(constant_node* node)
 	write_spaces();
 	switch (node->current_type)
 	{
-	case constant_node::type::f32:
+	case value_type::f32:
 		stream_ << node->f32;
 		break;
-	case constant_node::type::i32:
+	case value_type::i32:
 		stream_ << node->i32;
 		break;
-	case constant_node::type::u32:
+	case value_type::u32:
 		stream_ << node->u32;
 		break;
-	case constant_node::type::f64:
+	case value_type::f64:
 		stream_ << node->f64;
 		break;
-	case constant_node::type::i64:
+	case value_type::i64:
 		stream_ << node->i64;
 		break;
-	case constant_node::type::u64:
+	case value_type::u64:
 		stream_ << node->u64;
 		break;
 	}

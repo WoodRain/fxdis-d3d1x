@@ -179,14 +179,6 @@ public:
 };
 
 // types
-class constant_node : public ast_node
-{
-public:
-	constant_node() {};
-
-	virtual ~constant_node() {};
-	DECLARE_AST_NODE(constant_node, ast_node)
-
 #define SIGNED_TYPES \
 	CONSTANT_TYPE(float, f32) \
 	CONSTANT_TYPE(int32_t, i32) \
@@ -199,24 +191,35 @@ public:
 	CONSTANT_TYPE(uint64_t, u64)
 
 #define CONSTANT_TYPE(cpp_type, enum_type) \
+	enum_type,
+
+enum class value_type
+{
+	CONSTANT_TYPES
+};
+
+class constant_node : public ast_node
+{
+public:
+	constant_node() {};
+
+	virtual ~constant_node() {};
+	DECLARE_AST_NODE(constant_node, ast_node)
+
+#undef CONSTANT_TYPE
+#define CONSTANT_TYPE(cpp_type, enum_type) \
 	constant_node(cpp_type value) \
 	{ \
 		this->enum_type = value; \
-		this->current_type = type::enum_type; \
+		this->current_type = value_type::enum_type; \
 	}
 
 	CONSTANT_TYPES
 
 #undef CONSTANT_TYPE
-#define CONSTANT_TYPE(cpp_type, enum_type) \
-	enum_type,
 
-	enum class type
-	{
-		CONSTANT_TYPES
-	} current_type;
+	value_type current_type;
 
-#undef CONSTANT_TYPE
 #define CONSTANT_TYPE(cpp_type, enum_type) \
 	cpp_type enum_type;
 
@@ -227,7 +230,7 @@ public:
 
 #undef CONSTANT_TYPE
 #define CONSTANT_TYPE(cpp_type, enum_type) \
-	case type::enum_type: this->enum_type = abs(this->enum_type); break;
+	case value_type::enum_type: this->enum_type = abs(this->enum_type); break;
 
 	void absolute()
 	{
@@ -239,7 +242,7 @@ public:
 
 #undef CONSTANT_TYPE
 #define CONSTANT_TYPE(cpp_type, enum_type) \
-	case type::enum_type: return this->enum_type <= 0;
+	case value_type::enum_type: return this->enum_type <= 0;
 
 	bool is_negative()
 	{
@@ -255,9 +258,9 @@ public:
 	{
 		switch (this->current_type)
 		{
-		case type::f32:
-		case type::i32:
-		case type::u32:
+		case value_type::f32:
+		case value_type::i32:
+		case value_type::u32:
 			return false;
 		default:
 			return true;

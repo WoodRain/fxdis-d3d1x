@@ -21,17 +21,17 @@ std::shared_ptr<ast_node> decompile_operand(sm4::operand const* operand, sm4_opc
 			{
 				if (opcode_type == SM4_OPCODE_TYPE_INT)
 				{
-					var_node->current_type = constant_node::type::i32;
+					var_node->current_type = value_type::i32;
 					var_node->i32 = value.i32;
 				}
 				else if (opcode_type == SM4_OPCODE_TYPE_UINT)
 				{
-					var_node->current_type = constant_node::type::u32;
+					var_node->current_type = value_type::u32;
 					var_node->u32 = value.u32;
 				}
 				else
 				{
-					var_node->current_type = constant_node::type::f32;
+					var_node->current_type = value_type::f32;
 					var_node->f32 = value.f32;
 				}
 			}
@@ -39,17 +39,17 @@ std::shared_ptr<ast_node> decompile_operand(sm4::operand const* operand, sm4_opc
 			{
 				if (opcode_type == SM4_OPCODE_TYPE_INT)
 				{
-					var_node->current_type = constant_node::type::i64;
+					var_node->current_type = value_type::i64;
 					var_node->i64 = value.i64;
 				}
 				else if (opcode_type == SM4_OPCODE_TYPE_UINT)
 				{
-					var_node->current_type = constant_node::type::u64;
+					var_node->current_type = value_type::u64;
 					var_node->u64 = value.u64;
 				}
 				else
 				{
-					var_node->current_type = constant_node::type::f64;
+					var_node->current_type = value_type::f64;
 					var_node->f64 = value.f64;
 				}
 			}

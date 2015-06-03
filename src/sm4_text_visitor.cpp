@@ -80,22 +80,22 @@ void text_visitor::visit(constant_node* node)
 {
 	switch (node->current_type)
 	{
-	case constant_node::type::f32:
+	case value_type::f32:
 		stream_ << node->f32;
 		break;
-	case constant_node::type::i32:
+	case value_type::i32:
 		stream_ << node->i32;
 		break;
-	case constant_node::type::u32:
+	case value_type::u32:
 		stream_ << node->u32;
 		break;
-	case constant_node::type::f64:
+	case value_type::f64:
 		stream_ << node->f64;
 		break;
-	case constant_node::type::i64:
+	case value_type::i64:
 		stream_ << node->i64;
 		break;
-	case constant_node::type::u64:
+	case value_type::u64:
 		stream_ << node->u64;
 		break;
 	}
@@ -114,13 +114,13 @@ void text_visitor::visit(vector_node* node)
 	if (node->values.size() > 1)
 	{
 		auto type = node->values.front()->current_type;
-		if (type == constant_node::type::f32)
+		if (type == value_type::f32)
 			stream_ << "float";
-		else if (type == constant_node::type::f64)
+		else if (type == value_type::f64)
 			stream_ << "double";
-		else if (type == constant_node::type::i32 || type == constant_node::type::i64)
+		else if (type == value_type::i32 || type == value_type::i64)
 			stream_ << "int";
-		else if (type == constant_node::type::u32 || type == constant_node::type::u64)
+		else if (type == value_type::u32 || type == value_type::u64)
 			stream_ << "uint";
 
 		stream_ << node->values.size();
