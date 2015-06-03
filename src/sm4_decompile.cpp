@@ -242,11 +242,15 @@ std::shared_ptr<super_node> decompile(program const* p)
 		switch (declaration->opcode)
 		{
 		case SM4_OPCODE_DCL_INPUT:
+		case SM4_OPCODE_DCL_INPUT_SIV:
 		{
 			auto var_node = std::make_shared<variable_node>();
 			auto size = get_size(declaration->op.get());
 			var_node->type = get_or_insert("float", value_type::f32, size);
 			var_node->name = get_name(declaration->op.get());
+
+			if (declaration->opcode == SM4_OPCODE_DCL_INPUT_SIV)
+				var_node->semantic_index = declaration->sv;
 
 			input_struct->children.push_back(
 				std::make_shared<expr_stmt_node>(var_node));
@@ -259,6 +263,9 @@ std::shared_ptr<super_node> decompile(program const* p)
 			auto size = get_size(declaration->op.get());
 			var_node->type = get_or_insert("float", value_type::f32, size);
 			var_node->name = get_name(declaration->op.get());
+
+			if (declaration->opcode == SM4_OPCODE_DCL_OUTPUT_SIV)
+				var_node->semantic_index = declaration->sv;
 
 			output_struct->children.push_back(
 				std::make_shared<expr_stmt_node>(var_node));

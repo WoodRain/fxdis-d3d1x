@@ -294,6 +294,7 @@ public:
 
 	std::shared_ptr<type_node> type;
 	std::string name;
+	uint8_t semantic_index = 0;
 };
 
 class constant_node : public ast_node

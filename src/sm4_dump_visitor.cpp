@@ -116,7 +116,10 @@ void dump_visitor::visit(static_index_node* node)
 void dump_visitor::visit(variable_node* node)
 {
 	write_spaces();
-	stream_ << node->get_type_string() << " (" << node->name << ")";
+	stream_ << node->get_type_string();
+	stream_ << " (" << node->name;
+	stream_ << ", " << sm4_sv_names[node->semantic_index];
+	stream_ << ")";
 	write_newline();
 
 	++depth_;

@@ -134,6 +134,11 @@ void text_visitor::visit(variable_node* node)
 	stream_ << node->type->name;
 	stream_ << " ";
 	stream_ << node->name;
+	if (node->semantic_index > 0)
+	{
+		stream_ << " : ";
+		stream_ << sm4_sv_names[node->semantic_index];
+	}
 }
 
 void text_visitor::visit(constant_node* node)
