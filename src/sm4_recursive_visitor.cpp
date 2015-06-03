@@ -20,6 +20,11 @@ void recursive_visitor::visit(assign_stmt_node* node)
 	node->rhs->accept(*this);
 }
 
+void recursive_visitor::visit(expr_stmt_node* node)
+{
+	node->value->accept(*this);
+}
+
 void recursive_visitor::visit(dynamic_index_node* node)
 {
 	if (node->index)

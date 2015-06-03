@@ -15,13 +15,39 @@ typedef sm4_program program;
 typedef sm4_insn instruction;
 typedef sm4_op operand;
 
+#define SIGNED_TYPES \
+	CONSTANT_TYPE(float, f32) \
+	CONSTANT_TYPE(int32_t, i32) \
+	CONSTANT_TYPE(double, f64) \
+	CONSTANT_TYPE(int64_t, i64) \
+
+#define CONSTANT_TYPES \
+	SIGNED_TYPES \
+	CONSTANT_TYPE(uint32_t, u32) \
+	CONSTANT_TYPE(uint64_t, u64)
+
+#define CONSTANT_TYPE(cpp_type, enum_type) \
+	enum_type,
+
+enum class value_type
+{
+	CONSTANT_TYPES
+};
+
+#undef CONSTANT_TYPE
+
 #define AST_NODE_CLASSES \
 	/* General */ \
 	AST_NODE_CLASS(ast_node) \
 	AST_NODE_CLASS(super_node) \
+	AST_NODE_CLASS(type_node) \
+	AST_NODE_CLASS(vector_type_node) \
 	AST_NODE_CLASS(function_node) \
+	AST_NODE_CLASS(structure_node) \
 	AST_NODE_CLASS(assign_stmt_node) \
+	AST_NODE_CLASS(expr_stmt_node) \
 	/* Constants, variables */ \
+	AST_NODE_CLASS(variable_node) \
 	AST_NODE_CLASS(constant_node) \
 	AST_NODE_CLASS(global_variable_node) \
 	AST_NODE_CLASS(vector_node) \
@@ -150,6 +176,47 @@ public:
 	}
 };
 
+class type_node : public ast_node
+{
+public:
+	type_node() {};
+	DECLARE_AST_NODE(type_node, ast_node)
+
+	std::string name;
+
+	virtual bool operator==(ast_node const& rhs) 
+	{ 
+		if (!rhs.is_type(this->get_type()))
+			return false;
+
+		auto typed_rhs = static_cast<type_node const&>(rhs);
+
+		return	(name == typed_rhs.name);
+	}
+};
+
+class vector_type_node : public type_node
+{
+public:
+	vector_type_node() {};
+	DECLARE_AST_NODE(vector_type_node, type_node)
+
+	value_type type;
+	uint8_t count;
+
+	virtual bool operator==(ast_node const& rhs) 
+	{ 
+		if (!rhs.is_type(this->get_type()))
+			return false;
+
+		auto typed_rhs = static_cast<vector_type_node const&>(rhs);
+
+		return	(name == typed_rhs.name) &&
+				(type == typed_rhs.type) &&
+				(count == typed_rhs.count);
+	}
+};
+
 class function_node : public super_node
 {
 public:
@@ -157,7 +224,7 @@ public:
 	DECLARE_AST_NODE(function_node, super_node)
 
 	std::string name;
-	std::shared_ptr<ast_node> ret_value;
+	std::shared_ptr<type_node> return_type;
 	std::vector<std::shared_ptr<ast_node>> arguments;
 
 	virtual bool operator==(ast_node const& rhs) 
@@ -170,9 +237,29 @@ public:
 		return	(*this->parent == *typed_rhs.parent) && 
 				(this->children == typed_rhs.children) &&
 				(this->name == typed_rhs.name) &&
-				(this->ret_value && typed_rhs.ret_value && 
-				(*this->ret_value == *typed_rhs.ret_value)) &&
+				(this->return_type && typed_rhs.return_type && 
+				(*this->return_type == *typed_rhs.return_type)) &&
 				(this->arguments == typed_rhs.arguments);
+	}
+};
+
+class structure_node : public type_node
+{
+public:
+	virtual ~structure_node() {};
+	DECLARE_AST_NODE(structure_node, type_node)
+
+	std::vector<std::shared_ptr<ast_node>> children;
+
+	virtual bool operator==(ast_node const& rhs) 
+	{ 
+		if (!rhs.is_type(this->get_type()))
+			return false;
+
+		auto typed_rhs = static_cast<function_node const&>(rhs);
+
+		return	(this->children == typed_rhs.children) &&
+				(this->name == typed_rhs.name);
 	}
 };
 
@@ -205,24 +292,40 @@ public:
 	DECLARE_AST_NODE(assign_stmt_node, ast_node)
 };
 
-// types
-#define SIGNED_TYPES \
-	CONSTANT_TYPE(float, f32) \
-	CONSTANT_TYPE(int32_t, i32) \
-	CONSTANT_TYPE(double, f64) \
-	CONSTANT_TYPE(int64_t, i64) \
-
-#define CONSTANT_TYPES \
-	SIGNED_TYPES \
-	CONSTANT_TYPE(uint32_t, u32) \
-	CONSTANT_TYPE(uint64_t, u64)
-
-#define CONSTANT_TYPE(cpp_type, enum_type) \
-	enum_type,
-
-enum class value_type
+class expr_stmt_node : public ast_node
 {
-	CONSTANT_TYPES
+public:
+	expr_stmt_node() {};
+	expr_stmt_node(std::shared_ptr<ast_node> value) :
+		value(value)
+	{
+	}
+
+	DECLARE_AST_NODE(expr_stmt_node, ast_node)
+
+	std::shared_ptr<ast_node> value;
+};
+
+// types
+#define CONSTANT_TYPE(cpp_type, enum_type) \
+	#enum_type,
+
+static char const* const value_type_strings[] = {CONSTANT_TYPES};
+
+#undef CONSTANT_TYPE
+
+class variable_node : public ast_node
+{
+public:
+	variable_node() {};
+	variable_node(std::shared_ptr<type_node> type, std::string name) :
+		type(type), name(name)
+	{
+	}
+	DECLARE_AST_NODE(variable_node, ast_node)
+
+	std::shared_ptr<type_node> type;
+	std::string name;
 };
 
 class constant_node : public ast_node

@@ -1,6 +1,8 @@
 #include "sm4_decompile.h"
 #include "sm4.h"
 #include <ostream>
+#include <string>
+#include <unordered_map>
 
 namespace sm4 {
 
@@ -82,7 +84,7 @@ std::shared_ptr<ast_node> decompile_operand(sm4::operand const* operand, sm4_opc
 		if (operand->num_indices > dynamic_index)
 		{
 			auto& operand_index = operand->indices[dynamic_index];
-
+			
 			auto indexing_node = std::make_shared<dynamic_index_node>();
 
 			if (operand_index.reg.get())
@@ -161,13 +163,119 @@ std::shared_ptr<ast_node> saturate_if_necessary(sm4::instruction const* instruct
 	return node;
 }
 
+std::string get_name(sm4::operand const* operand)
+{
+	std::string ret = sm4_file_names[operand->file];
+	
+	if (operand->indices[0].reg.get())
+		return ret;
+
+	ret += std::to_string(operand->indices[0].disp);
+
+	return ret;
+}
+
+uint8_t get_size(sm4::operand const* operand)
+{
+	uint8_t ret = 0;
+
+	if (operand->mode == SM4_OPERAND_MODE_MASK)
+	{
+		for (unsigned int i = 0; i < operand->comps; ++i)
+			if (operand->mask & (1 << i))
+				++ret;
+	}
+	else if (operand->mode == SM4_OPERAND_MODE_SWIZZLE)
+	{
+		ret = operand->comps;
+	}
+	else
+	{
+		ret = 1;
+	}
+
+	return ret;
+}
+
 std::shared_ptr<super_node> decompile(program const* p)
 {
 	auto root = std::make_shared<super_node>();
 
+	std::string struct_prefix;
+	if (p->version.type == 0)
+		struct_prefix = "Pixel";
+	else if (p->version.type == 1)
+		struct_prefix = "Vertex";
+	else if (p->version.type == 2)
+		struct_prefix = "Geometry";
+
+	std::unordered_map<std::string, std::shared_ptr<type_node>> types;
+	auto get_or_insert = [&](std::string const& s, value_type type, uint8_t count) -> std::shared_ptr<type_node>
+	{
+		auto name = s + (count > 1 ? std::to_string(count) : "");
+
+		auto it = types.find(name);
+
+		if (it != types.end())
+			return it->second;
+
+		auto new_node = std::make_shared<vector_type_node>();
+		new_node->type = type;
+		new_node->count = count;
+		new_node->name = name;
+
+		types[name] = new_node;
+
+		return new_node;
+	};
+
+	auto input_struct = std::make_shared<structure_node>();
+	input_struct->name = struct_prefix + "Input";
+	types[input_struct->name] = input_struct;
+
+	auto output_struct = std::make_shared<structure_node>();
+	output_struct->name = struct_prefix + "Output";
+	types[output_struct->name] = output_struct;
+
+	for (auto const declaration : p->dcls)
+	{
+		switch (declaration->opcode)
+		{
+		case SM4_OPCODE_DCL_INPUT:
+		{
+			auto var_node = std::make_shared<variable_node>();
+			auto size = get_size(declaration->op.get());
+			var_node->type = get_or_insert("float", value_type::f32, size);
+			var_node->name = get_name(declaration->op.get());
+
+			input_struct->children.push_back(
+				std::make_shared<expr_stmt_node>(var_node));
+			break;
+		}
+		case SM4_OPCODE_DCL_OUTPUT:
+		case SM4_OPCODE_DCL_OUTPUT_SIV:
+		{
+			auto var_node = std::make_shared<variable_node>();
+			auto size = get_size(declaration->op.get());
+			var_node->type = get_or_insert("float", value_type::f32, size);
+			var_node->name = get_name(declaration->op.get());
+
+			output_struct->children.push_back(
+				std::make_shared<expr_stmt_node>(var_node));
+			break;
+		}
+		}
+	}
+
+	root->children.push_back(input_struct);
+	root->children.push_back(output_struct);
+
 	auto main_function = std::make_shared<function_node>();
 	main_function->name = "main";
 	main_function->parent = root;
+	main_function->return_type = output_struct;
+	main_function->arguments.push_back(
+		std::make_shared<variable_node>(input_struct, "input"));
 	
 	root->children.push_back(main_function);
 	root = main_function;

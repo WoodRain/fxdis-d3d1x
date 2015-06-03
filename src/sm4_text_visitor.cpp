@@ -33,21 +33,51 @@ void text_visitor::visit(ast_node* node)
 void text_visitor::visit(super_node* node)
 {
 	for (auto child : node->children)
+	{
 		child->accept(*this);
+		stream_ << "\n";
+	}
+}
+
+void text_visitor::visit(type_node* node)
+{
+	stream_ << node->name;
 }
 
 void text_visitor::visit(function_node* node)
 {
 	write_spaces();
-	if (node->ret_value)
-		node->ret_value->accept(*this);
+	if (node->return_type)
+		stream_ << node->return_type->name;
 	else
-		stream_ << "void ";
+		stream_ << "void";
 
+	stream_ << " ";
 	stream_ << node->name;
 	stream_ << "(";
 	this->print_argument_list(node->arguments);
 	stream_ << ")";
+	write_newline();
+
+	write_spaces();
+	stream_ << "{";
+	write_newline();
+
+	++depth_;
+	for (auto child : node->children)
+		child->accept(*this);
+	--depth_;
+
+	write_spaces();
+	stream_ << "}";
+	write_newline();
+}
+
+void text_visitor::visit(structure_node* node)
+{
+	write_spaces();
+	stream_ << "struct ";
+	stream_ << node->name;
 	write_newline();
 
 	write_spaces();
@@ -70,6 +100,14 @@ void text_visitor::visit(assign_stmt_node* node)
 	node->lhs->accept(*this);
 	stream_ << " = ";
 	node->rhs->accept(*this);
+	stream_ << ";";
+	write_newline();
+}
+
+void text_visitor::visit(expr_stmt_node* node)
+{
+	write_spaces();
+	node->value->accept(*this);
 	stream_ << ";";
 	write_newline();
 }
@@ -99,6 +137,13 @@ void text_visitor::visit(static_index_node* node)
 	stream_ << ".";
 	for (auto index : node->indices)
 		stream_ << "xyzw"[index];
+}
+
+void text_visitor::visit(variable_node* node)
+{
+	stream_ << node->type->name;
+	stream_ << " ";
+	stream_ << node->name;
 }
 
 void text_visitor::visit(constant_node* node)

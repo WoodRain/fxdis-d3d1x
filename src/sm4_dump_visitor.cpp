@@ -35,6 +35,15 @@ void dump_visitor::visit(super_node* node)
 	--depth_;
 }
 
+void dump_visitor::visit(type_node* node)
+{
+	write_spaces();
+	stream_ << node->get_type_string() << " (";
+	stream_ << node->name;
+	stream_ << ")";
+	write_newline();
+}
+
 void dump_visitor::visit(function_node* node)
 {
 	write_spaces();
@@ -42,10 +51,22 @@ void dump_visitor::visit(function_node* node)
 	write_newline();
 
 	++depth_;
-	if (node->ret_value)
-		node->ret_value->accept(*this);
+	if (node->return_type)
+		node->return_type->accept(*this);
 	for (auto child : node->arguments)
 		child->accept(*this);
+	for (auto child : node->children)
+		child->accept(*this);
+	--depth_;
+}
+
+void dump_visitor::visit(structure_node* node)
+{
+	write_spaces();
+	stream_ << node->get_type_string() << " (" << node->name << ")";
+	write_newline();
+
+	++depth_;
 	for (auto child : node->children)
 		child->accept(*this);
 	--depth_;
@@ -60,6 +81,17 @@ void dump_visitor::visit(assign_stmt_node* node)
 	++depth_;
 	node->lhs->accept(*this);
 	node->rhs->accept(*this);
+	--depth_;
+}
+
+void dump_visitor::visit(expr_stmt_node* node)
+{
+	write_spaces();
+	stream_ << node->get_type_string();
+	write_newline();
+
+	++depth_;
+	node->value->accept(*this);
 	--depth_;
 }
 
@@ -90,6 +122,17 @@ void dump_visitor::visit(static_index_node* node)
 
 	++depth_;
 	node->value->accept(*this);
+	--depth_;
+}
+
+void dump_visitor::visit(variable_node* node)
+{
+	write_spaces();
+	stream_ << node->get_type_string() << " (" << node->name << ")";
+	write_newline();
+
+	++depth_;
+	node->type->accept(*this);
 	--depth_;
 }
 
