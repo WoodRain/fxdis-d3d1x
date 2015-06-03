@@ -35,6 +35,22 @@ void dump_visitor::visit(super_node* node)
 	--depth_;
 }
 
+void dump_visitor::visit(function_node* node)
+{
+	write_spaces();
+	stream_ << node->get_type_string() << " (" << node->name << ")";
+	write_newline();
+
+	++depth_;
+	if (node->ret_value)
+		node->ret_value->accept(*this);
+	for (auto child : node->arguments)
+		child->accept(*this);
+	for (auto child : node->children)
+		child->accept(*this);
+	--depth_;
+}
+
 void dump_visitor::visit(assign_stmt_node* node)
 {
 	write_spaces();

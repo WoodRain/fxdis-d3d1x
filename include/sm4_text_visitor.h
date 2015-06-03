@@ -14,6 +14,7 @@ public:
 
 	virtual void visit(ast_node* node);
 	virtual void visit(super_node* node);
+	virtual void visit(function_node* node);
 	virtual void visit(assign_stmt_node* node);
 
 	virtual void visit(dynamic_index_node* node);
@@ -24,6 +25,7 @@ public:
 	virtual void visit(vector_node* node);
 
 	virtual void visit(comparison_node* node);
+	virtual void visit(else_node* node);
 
 	virtual void visit(function_call_expr_node* node);
 	virtual void visit(instruction_call_expr_node* node);
@@ -40,6 +42,8 @@ public:
 	virtual void visit(div_expr_node* node);
 	virtual void visit(eq_expr_node* node);
 	virtual void visit(neq_expr_node* node);
+
+	void print_argument_list(std::vector<std::shared_ptr<ast_node>> const& v);
 
 	text_visitor operator=(text_visitor const& rhs) = delete;
 

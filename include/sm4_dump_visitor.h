@@ -14,6 +14,7 @@ public:
 
 	virtual void visit(ast_node* node);
 	virtual void visit(super_node* node);
+	virtual void visit(function_node* node);
 	virtual void visit(assign_stmt_node* node);
 
 	virtual void visit(dynamic_index_node* node);

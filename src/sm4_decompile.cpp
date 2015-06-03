@@ -155,6 +155,13 @@ std::shared_ptr<super_node> decompile(program const* p)
 {
 	auto root = std::make_shared<super_node>();
 
+	auto main_function = std::make_shared<function_node>();
+	main_function->name = "main";
+	main_function->parent = root;
+	
+	root->children.push_back(main_function);
+	root = main_function;
+
 	for (auto const instruction : p->insns)
 	{
 		switch (instruction->opcode)
@@ -271,6 +278,8 @@ std::shared_ptr<super_node> decompile(program const* p)
 			break;
 		};
 	}
+
+	root = main_function->parent;
 
 	return root;
 }

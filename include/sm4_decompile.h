@@ -19,6 +19,7 @@ typedef sm4_op operand;
 	/* General */ \
 	AST_NODE_CLASS(ast_node) \
 	AST_NODE_CLASS(super_node) \
+	AST_NODE_CLASS(function_node) \
 	AST_NODE_CLASS(assign_stmt_node) \
 	/* Constants, variables */ \
 	AST_NODE_CLASS(constant_node) \
@@ -146,6 +147,32 @@ public:
 
 		return	(*this->parent == *typed_rhs.parent) && 
 				(this->children == typed_rhs.children);
+	}
+};
+
+class function_node : public super_node
+{
+public:
+	virtual ~function_node() {};
+	DECLARE_AST_NODE(function_node, super_node)
+
+	std::string name;
+	std::shared_ptr<ast_node> ret_value;
+	std::vector<std::shared_ptr<ast_node>> arguments;
+
+	virtual bool operator==(ast_node const& rhs) 
+	{ 
+		if (!rhs.is_type(this->get_type()))
+			return false;
+
+		auto typed_rhs = static_cast<function_node const&>(rhs);
+
+		return	(*this->parent == *typed_rhs.parent) && 
+				(this->children == typed_rhs.children) &&
+				(this->name == typed_rhs.name) &&
+				(this->ret_value && typed_rhs.ret_value && 
+				(*this->ret_value == *typed_rhs.ret_value)) &&
+				(this->arguments == typed_rhs.arguments);
 	}
 };
 

@@ -32,8 +32,22 @@ void text_visitor::visit(ast_node* node)
 
 void text_visitor::visit(super_node* node)
 {
+	for (auto child : node->children)
+		child->accept(*this);
+}
+
+void text_visitor::visit(function_node* node)
+{
 	write_spaces();
-	stream_ << sanitized_node_type(node);
+	if (node->ret_value)
+		node->ret_value->accept(*this);
+	else
+		stream_ << "void ";
+
+	stream_ << node->name;
+	stream_ << "(";
+	this->print_argument_list(node->arguments);
+	stream_ << ")";
 	write_newline();
 
 	write_spaces();
@@ -122,17 +136,14 @@ void text_visitor::visit(vector_node* node)
 			stream_ << "int";
 		else if (type == value_type::u32 || type == value_type::u64)
 			stream_ << "uint";
-
 		stream_ << node->values.size();
-		stream_ << "(";
-		bool first = true;
+
+		std::vector<std::shared_ptr<ast_node>> arguments;
 		for (auto value : node->values)
-		{
-			if (!first)
-				stream_ << ", ";
-			value->accept(*this);
-			first = false;
-		}
+			arguments.push_back(value);
+
+		stream_ << "(";
+		this->print_argument_list(arguments);
 		stream_ << ")";
 	}
 	else
@@ -161,35 +172,38 @@ void text_visitor::visit(comparison_node* node)
 	write_newline();
 }
 
+
+void text_visitor::visit(else_node* node)
+{
+	write_spaces();
+	stream_ << "else";
+	write_newline();
+
+	write_spaces();
+	stream_ << "{";
+	write_newline();
+
+	++depth_;
+	for (auto child : node->children)
+		child->accept(*this);
+	--depth_;
+
+	write_spaces();
+	stream_ << "}";
+	write_newline();
+}
+
 void text_visitor::visit(function_call_expr_node* node)
 {
 	stream_ << node->name << "(";
-	
-	bool first = true;
-	for (auto argument : node->arguments)
-	{
-		if (!first)
-			stream_ << ", ";
-		argument->accept(*this);
-		first = false;
-	}
-
+	this->print_argument_list(node->arguments);
 	stream_ << ")";
 }
 
 void text_visitor::visit(instruction_call_expr_node* node)
 {
 	stream_ << sm4_opcode_names[node->opcode] << "(";
-	
-	bool first = true;
-	for (auto argument : node->arguments)
-	{
-		if (!first)
-			stream_ << ", ";
-		argument->accept(*this);
-		first = false;
-	}
-
+	this->print_argument_list(node->arguments);
 	stream_ << ")";
 }
 
@@ -286,6 +300,18 @@ void text_visitor::visit(neq_expr_node* node)
 	node->lhs->accept(*this);
 	stream_ << " != ";
 	node->rhs->accept(*this);
+}
+
+void text_visitor::print_argument_list(std::vector<std::shared_ptr<ast_node>> const& v)
+{
+	bool first = true;
+	for (auto argument : v)
+	{
+		if (!first)
+			stream_ << ", ";
+		argument->accept(*this);
+		first = false;
+	}
 }
 
 }
