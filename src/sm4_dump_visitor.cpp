@@ -67,10 +67,13 @@ void dump_visitor::visit(dynamic_index_node* node)
 {
 	write_spaces();
 	stream_ << node->get_type_string();
+	if (node->displacement)
+		stream_ << " (" << node->displacement << ")";
 	write_newline();
 
 	++depth_;
-	node->index->accept(*this);
+	if (node->index)
+		node->index->accept(*this);
 	node->value->accept(*this);
 	--depth_;
 }

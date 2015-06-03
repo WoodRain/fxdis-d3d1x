@@ -67,20 +67,30 @@ std::shared_ptr<ast_node> decompile_operand(sm4::operand const* operand, sm4_opc
 			node = std::make_shared<register_node>(index);
 		else if (operand->file == SM4_FILE_CONSTANT_BUFFER)
 			node = std::make_shared<constant_buffer_node>(index);
-		else if (operand->file == SM4_FILE_IMMEDIATE_CONSTANT_BUFFER)
-			node = std::make_shared<immediate_constant_buffer_node>(index);
 		else if (operand->file == SM4_FILE_INPUT)
 			node = std::make_shared<input_node>(index);
 		else if (operand->file == SM4_FILE_OUTPUT)
 			node = std::make_shared<output_node>(index);
+		// There is only one ICB, and it is dynamically indexed
+		else if (operand->file == SM4_FILE_IMMEDIATE_CONSTANT_BUFFER)
+			node = std::make_shared<immediate_constant_buffer_node>();
+
+		auto dynamic_index = 
+			(operand->file == SM4_FILE_IMMEDIATE_CONSTANT_BUFFER) ? 0 : 1;
 
 		// if we've found that this is actually an indexing operation
-		if (operand->indices[0].reg.get())
+		if (operand->num_indices > dynamic_index)
 		{
+			auto& operand_index = operand->indices[dynamic_index];
+
 			auto indexing_node = std::make_shared<dynamic_index_node>();
-			indexing_node->index = decompile_operand(
-				operand->indices[0].reg.get(), opcode_type);
+
+			if (operand_index.reg.get())
+				indexing_node->index = decompile_operand(operand_index.reg.get(), opcode_type);
+
 			indexing_node->value = force_node_cast<global_variable_node>(node);
+			indexing_node->displacement = operand_index.disp;
+
 			node = indexing_node;
 		}
 	}

@@ -78,7 +78,18 @@ void text_visitor::visit(dynamic_index_node* node)
 {
 	node->value->accept(*this);
 	stream_ << "[";
-	node->index->accept(*this);
+	
+	if (node->index)
+	{
+		node->index->accept(*this);
+		if (node->displacement)
+			stream_ << "+" << node->displacement;
+	}
+	else
+	{
+		stream_ << node->displacement;
+	}
+
 	stream_ << "]";
 }
 
@@ -117,7 +128,9 @@ void text_visitor::visit(constant_node* node)
 
 void text_visitor::visit(global_variable_node* node)
 {
-	stream_ << sanitized_node_type(node) << node->index;
+	stream_ << sanitized_node_type(node);
+	if (node->index >= 0)
+		stream_ << node->index;
 }
 
 void text_visitor::visit(vector_node* node)

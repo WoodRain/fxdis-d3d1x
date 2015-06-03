@@ -315,6 +315,7 @@ public:
 class global_variable_node : public ast_node
 {
 public:
+	global_variable_node() {}
 	global_variable_node(int64_t index) :
 		index(index)
 	{
@@ -323,7 +324,7 @@ public:
 	virtual ~global_variable_node() {};
 	DECLARE_AST_NODE(global_variable_node, ast_node)
 
-	int64_t index;
+	int64_t index = -1;
 
 	virtual bool operator==(ast_node const& rhs) 
 	{ 
@@ -340,6 +341,7 @@ public:
 	class node_name : public global_variable_node \
 	{ \
 		public: \
+			node_name() {} \
 			node_name(int64_t index) : \
 				global_variable_node(index) \
 			{ \
@@ -449,6 +451,7 @@ public:
 	DECLARE_AST_NODE(dynamic_index_node, variable_access_node)
 
 	std::shared_ptr<ast_node> index;
+	int64_t displacement;
 
 	virtual bool operator==(ast_node const& rhs) 
 	{ 
@@ -458,7 +461,8 @@ public:
 		auto typed_rhs = static_cast<dynamic_index_node const&>(rhs);
 
 		return	(*this->value == *typed_rhs.value) && 
-				(*this->index == *typed_rhs.index);
+				(*this->index == *typed_rhs.index) &&
+				(this->displacement == typed_rhs.displacement);
 	}
 };
 

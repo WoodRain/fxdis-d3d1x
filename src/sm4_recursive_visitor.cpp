@@ -22,7 +22,8 @@ void recursive_visitor::visit(assign_stmt_node* node)
 
 void recursive_visitor::visit(dynamic_index_node* node)
 {
-	node->index->accept(*this);
+	if (node->index)
+		node->index->accept(*this);
 	node->value->accept(*this);
 }
 
