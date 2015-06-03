@@ -14,12 +14,6 @@ void recursive_visitor::visit(super_node* node)
 		child->accept(*this);
 }
 
-void recursive_visitor::visit(assign_stmt_node* node)
-{
-	node->lhs->accept(*this);
-	node->rhs->accept(*this);
-}
-
 void recursive_visitor::visit(expr_stmt_node* node)
 {
 	node->value->accept(*this);

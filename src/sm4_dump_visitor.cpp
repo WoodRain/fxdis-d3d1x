@@ -72,18 +72,6 @@ void dump_visitor::visit(structure_node* node)
 	--depth_;
 }
 
-void dump_visitor::visit(assign_stmt_node* node)
-{
-	write_spaces();
-	stream_ << node->get_type_string();
-	write_newline();
-
-	++depth_;
-	node->lhs->accept(*this);
-	node->rhs->accept(*this);
-	--depth_;
-}
-
 void dump_visitor::visit(expr_stmt_node* node)
 {
 	write_spaces();

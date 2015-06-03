@@ -233,15 +233,6 @@ void rewrite_node(std::shared_ptr<ast_node>& node)
 		rewrite_mul_expr_node(node);
 }
 
-void rewrite_visitor::visit(assign_stmt_node* node)
-{
-	rewrite_node(node->lhs);
-	rewrite_node(node->rhs);
-
-	node->lhs->accept(*this);
-	node->rhs->accept(*this);
-}
-
 void rewrite_visitor::visit(unary_expr_node* node)
 {
 	rewrite_node(node->value);

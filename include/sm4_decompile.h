@@ -44,7 +44,6 @@ enum class value_type
 	AST_NODE_CLASS(vector_type_node) \
 	AST_NODE_CLASS(function_node) \
 	AST_NODE_CLASS(structure_node) \
-	AST_NODE_CLASS(assign_stmt_node) \
 	AST_NODE_CLASS(expr_stmt_node) \
 	/* Constants, variables */ \
 	AST_NODE_CLASS(variable_node) \
@@ -76,6 +75,7 @@ enum class value_type
 	AST_NODE_CLASS(negate_node) \
 	/* Binary expression nodes */ \
 	AST_NODE_CLASS(binary_expr_node) \
+	AST_NODE_CLASS(assign_expr_node) \
 	AST_NODE_CLASS(add_expr_node) \
 	AST_NODE_CLASS(sub_expr_node) \
 	AST_NODE_CLASS(mul_expr_node) \
@@ -258,32 +258,6 @@ public:
 		return	(this->children == typed_rhs.children) &&
 				(this->name == typed_rhs.name);
 	}
-};
-
-class assign_stmt_node : public ast_node
-{
-public:
-	assign_stmt_node() {}
-	assign_stmt_node(std::shared_ptr<ast_node> lhs, std::shared_ptr<ast_node> rhs)
-	{
-		this->set_lhs(lhs);
-		this->set_rhs(rhs);
-	}
-
-	void set_lhs(std::shared_ptr<ast_node> lhs)
-	{
-		this->lhs = lhs;
-	}
-
-	void set_rhs(std::shared_ptr<ast_node> rhs)
-	{
-		this->rhs = rhs;
-	}
-
-	std::shared_ptr<ast_node> lhs;
-	std::shared_ptr<ast_node> rhs;
-
-	DECLARE_AST_NODE(assign_stmt_node, ast_node)
 };
 
 class expr_stmt_node : public ast_node
@@ -759,6 +733,7 @@ public:
 		DECLARE_AST_NODE(node_name, binary_expr_node) \
 	};
 
+DEFINE_DERIVED_BINARY_EXPR_NODE(assign_expr_node)
 DEFINE_DERIVED_BINARY_EXPR_NODE(add_expr_node)
 DEFINE_DERIVED_BINARY_EXPR_NODE(sub_expr_node)
 DEFINE_DERIVED_BINARY_EXPR_NODE(mul_expr_node)

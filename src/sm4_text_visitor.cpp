@@ -94,16 +94,6 @@ void text_visitor::visit(structure_node* node)
 	write_newline();
 }
 
-void text_visitor::visit(assign_stmt_node* node)
-{
-	write_spaces();
-	node->lhs->accept(*this);
-	stream_ << " = ";
-	node->rhs->accept(*this);
-	stream_ << ";";
-	write_newline();
-}
-
 void text_visitor::visit(expr_stmt_node* node)
 {
 	write_spaces();
@@ -283,6 +273,13 @@ void text_visitor::visit(negate_node* node)
 {	
 	stream_ << "-";
 	node->value->accept(*this);
+}
+
+void text_visitor::visit(assign_expr_node* node)
+{
+	node->lhs->accept(*this);
+	stream_ << " = ";
+	node->rhs->accept(*this);
 }
 
 void text_visitor::visit(add_expr_node* node)
