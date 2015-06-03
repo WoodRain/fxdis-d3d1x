@@ -321,6 +321,7 @@ std::shared_ptr<super_node> decompile(program const* p)
 			root->children.push_back(std::make_shared<ret_node>());
 			break;
 
+		// Unary
 		case SM4_OPCODE_FRC:
 		case SM4_OPCODE_RSQ:
 		case SM4_OPCODE_ITOF:
@@ -329,20 +330,7 @@ std::shared_ptr<super_node> decompile(program const* p)
 		case SM4_OPCODE_MOV:
 		case SM4_OPCODE_ROUND_NI:
 		case SM4_OPCODE_EXP:
-		{
-			auto node = std::make_shared<instruction_call_expr_node>();
-			node->opcode = instruction->opcode;
-			node->arguments.push_back(decompile_operand(instruction, 1));
-
-			auto assign_expr = std::make_shared<assign_expr_node>(
-				decompile_operand(instruction, 0),
-				saturate_if_necessary(instruction, node)
-			);
-
-			root->children.push_back(std::make_shared<expr_stmt_node>(assign_expr));
-			break;
-		}
-
+		// Binary
 		case SM4_OPCODE_MUL:
 		case SM4_OPCODE_DIV:
 		case SM4_OPCODE_ADD:
@@ -358,29 +346,15 @@ std::shared_ptr<super_node> decompile(program const* p)
 		case SM4_OPCODE_MAX:
 		case SM4_OPCODE_MIN:
 		case SM4_OPCODE_LT:
-		{
-			auto node = std::make_shared<instruction_call_expr_node>();
-			node->opcode = instruction->opcode;
-			node->arguments.push_back(decompile_operand(instruction, 1));
-			node->arguments.push_back(decompile_operand(instruction, 2));
-
-			auto assign_expr = std::make_shared<assign_expr_node>(
-				decompile_operand(instruction, 0),
-				saturate_if_necessary(instruction, node)
-			);
-
-			root->children.push_back(std::make_shared<expr_stmt_node>(assign_expr));
-			break;
-		}
-
+		// Ternary
 		case SM4_OPCODE_MAD:
 		case SM4_OPCODE_MOVC:
 		{
 			auto node = std::make_shared<instruction_call_expr_node>();
 			node->opcode = instruction->opcode;
-			node->arguments.push_back(decompile_operand(instruction, 1));
-			node->arguments.push_back(decompile_operand(instruction, 2));
-			node->arguments.push_back(decompile_operand(instruction, 3));
+
+			for (size_t i = 1; i < instruction->num_ops; ++i)
+				node->arguments.push_back(decompile_operand(instruction, i));
 
 			auto assign_expr = std::make_shared<assign_expr_node>(
 				decompile_operand(instruction, 0),
