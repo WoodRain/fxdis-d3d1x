@@ -4,17 +4,6 @@
 
 namespace sm4 {
 
-// Forgive me for I have sinned
-#define AST_NODE_CLASS(klass) \
-	void ast_visitor::visit(klass* node) \
-	{ \
-		this->visit((klass::base_class*)node); \
-	} \
-
-	AST_NODE_CLASSES
-
-#undef AST_NODE_CLASS
-
 // decompile
 decompiler::decompiler(program const& program) :
 	program_(program)
