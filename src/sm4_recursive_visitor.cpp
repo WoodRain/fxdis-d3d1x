@@ -31,12 +31,9 @@ void recursive_visitor::visit(static_index_node* node)
 	node->value->accept(*this);
 }
 
-void recursive_visitor::visit(constant_node* node)
+void recursive_visitor::visit(variable_decl_node* node)
 {
-}
-
-void recursive_visitor::visit(global_variable_node* node)
-{
+	node->variable->accept(*this);
 }
 
 void recursive_visitor::visit(vector_node* node)

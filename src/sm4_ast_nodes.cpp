@@ -13,6 +13,31 @@ namespace sm4 {
 
 #undef AST_NODE_CLASS
 
+std::shared_ptr<variable_node> super_node::get_variable(std::string const& name)
+{
+	auto it = this->variables.find(name);
+
+	if (it != this->variables.end())
+		return it->second;
+
+	if (this->parent)
+		return this->parent->get_variable(name);
+
+	return nullptr;
+}
+
+void super_node::add_variable(std::shared_ptr<variable_node> variable, bool add_statement)
+{
+	if (add_statement)
+	{
+		this->children.push_back(
+			std::make_shared<expr_stmt_node>(
+				std::make_shared<variable_decl_node>(variable)));
+	}
+
+	this->variables[variable->name] = variable;
+}
+
 bool super_node::operator==(ast_node const& rhs) 
 { 
 	auto ret = base_class::operator==(rhs);
@@ -45,6 +70,12 @@ bool vector_type_node::operator==(ast_node const& rhs)
 	return ret;
 }
 
+void function_node::add_argument(std::shared_ptr<variable_node> variable)
+{
+	this->arguments.push_back(std::make_shared<variable_decl_node>(variable));
+	this->variables[variable->name] = variable;
+}
+
 bool function_node::operator==(ast_node const& rhs) 
 { 
 	auto ret = base_class::operator==(rhs);
@@ -58,12 +89,42 @@ bool function_node::operator==(ast_node const& rhs)
 	return ret;
 }
 
+void structure_node::add_variable(std::shared_ptr<variable_node> variable)
+{
+	this->children.push_back(
+		std::make_shared<expr_stmt_node>(
+			std::make_shared<variable_decl_node>(variable)));
+	this->variables[variable->name] = variable;
+}
+
 bool structure_node::operator==(ast_node const& rhs) 
 { 
 	auto ret = base_class::operator==(rhs);
 	auto typed_rhs = static_cast<this_class const&>(rhs);
 
 	ret &= (this->name == typed_rhs.name);
+
+	return ret;
+}
+
+bool variable_node::operator==(ast_node const& rhs) 
+{
+	auto ret = base_class::operator==(rhs);
+	auto typed_rhs = static_cast<this_class const&>(rhs);
+
+	ret &= (*this->type == *typed_rhs.type);
+	ret &= (this->name == typed_rhs.name);
+	ret &= (this->semantic_index == typed_rhs.semantic_index);
+
+	return ret;
+}
+
+bool variable_decl_node::operator==(ast_node const& rhs)
+{
+	auto ret = base_class::operator==(rhs);
+	auto typed_rhs = static_cast<this_class const&>(rhs);
+
+	ret &= (*this->variable == *typed_rhs.variable);
 
 	return ret;
 }

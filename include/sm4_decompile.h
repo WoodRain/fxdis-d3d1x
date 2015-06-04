@@ -22,8 +22,10 @@ private:
 		std::shared_ptr<structure_node> input, 
 		std::shared_ptr<structure_node> output);
 
-	std::shared_ptr<ast_node> decompile_operand(operand const* operand, sm4_opcode_type opcode_type);
-	std::shared_ptr<ast_node> decompile_operand(instruction const* instruction, int i);
+	std::shared_ptr<ast_node> decompile_operand(
+		std::shared_ptr<super_node> scope, operand const* operand, sm4_opcode_type opcode_type);
+	std::shared_ptr<ast_node> decompile_operand(
+		std::shared_ptr<super_node> scope, instruction const* instruction, int i);
 	std::string get_name(sm4::operand const* operand);
 	uint8_t get_size(sm4::operand const* operand);
 

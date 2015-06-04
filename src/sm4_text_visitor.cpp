@@ -131,13 +131,20 @@ void text_visitor::visit(static_index_node* node)
 
 void text_visitor::visit(variable_node* node)
 {
-	stream_ << node->type->name;
-	stream_ << " ";
 	stream_ << node->name;
-	if (node->semantic_index > 0)
+}
+
+void text_visitor::visit(variable_decl_node* node)
+{
+	auto var = node->variable;
+
+	stream_ << var->type->name;
+	stream_ << " ";
+	stream_ << var->name;
+	if (var->semantic_index > 0)
 	{
 		stream_ << " : ";
-		stream_ << sm4_sv_names[node->semantic_index];
+		stream_ << sm4_sv_names[var->semantic_index];
 	}
 }
 
@@ -284,6 +291,13 @@ void text_visitor::visit(assign_expr_node* node)
 {
 	node->lhs->accept(*this);
 	stream_ << " = ";
+	node->rhs->accept(*this);
+}
+
+void text_visitor::visit(dot_expr_node* node)
+{
+	node->lhs->accept(*this);
+	stream_ << ".";
 	node->rhs->accept(*this);
 }
 

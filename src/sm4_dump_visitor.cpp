@@ -127,6 +127,17 @@ void dump_visitor::visit(variable_node* node)
 	--depth_;
 }
 
+void dump_visitor::visit(variable_decl_node* node)
+{
+	write_spaces();
+	stream_ << node->get_type_string();
+	write_newline();
+
+	++depth_;
+	node->variable->accept(*this);
+	--depth_;
+}
+
 void dump_visitor::visit(constant_node* node)
 {
 	write_spaces();

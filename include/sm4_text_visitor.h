@@ -23,6 +23,7 @@ public:
 	virtual void visit(static_index_node* node);
 
 	virtual void visit(variable_node* node);
+	virtual void visit(variable_decl_node* node);
 	virtual void visit(constant_node* node);
 	virtual void visit(global_variable_node* node);
 	virtual void visit(vector_node* node);
@@ -40,6 +41,7 @@ public:
 	virtual void visit(negate_node* node);
 
 	virtual void visit(assign_expr_node* node);
+	virtual void visit(dot_expr_node* node);
 	virtual void visit(add_expr_node* node);
 	virtual void visit(sub_expr_node* node);
 	virtual void visit(mul_expr_node* node);

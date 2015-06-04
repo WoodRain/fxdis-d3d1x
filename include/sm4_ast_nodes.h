@@ -43,14 +43,13 @@ enum class value_type
 	AST_NODE_CLASS(expr_stmt_node) \
 	/* Constants, variables */ \
 	AST_NODE_CLASS(variable_node) \
+	AST_NODE_CLASS(variable_decl_node) \
 	AST_NODE_CLASS(constant_node) \
 	AST_NODE_CLASS(global_variable_node) \
 	AST_NODE_CLASS(vector_node) \
 	AST_NODE_CLASS(register_node) \
 	AST_NODE_CLASS(constant_buffer_node) \
 	AST_NODE_CLASS(immediate_constant_buffer_node) \
-	AST_NODE_CLASS(input_node) \
-	AST_NODE_CLASS(output_node) \
 	/* Indexing */ \
 	AST_NODE_CLASS(variable_access_node) \
 	AST_NODE_CLASS(static_index_node) \
@@ -71,6 +70,7 @@ enum class value_type
 	AST_NODE_CLASS(negate_node) \
 	/* Binary expression nodes */ \
 	AST_NODE_CLASS(binary_expr_node) \
+	AST_NODE_CLASS(dot_expr_node) \
 	AST_NODE_CLASS(assign_expr_node) \
 	AST_NODE_CLASS(add_expr_node) \
 	AST_NODE_CLASS(sub_expr_node) \
@@ -156,7 +156,11 @@ public:
 	DECLARE_AST_NODE(super_node, ast_node)
 
 	std::shared_ptr<super_node> parent;
+	std::unordered_map<std::string, std::shared_ptr<variable_node>> variables;
 	std::vector<std::shared_ptr<ast_node>> children;
+
+	std::shared_ptr<variable_node> get_variable(std::string const& name);
+	void add_variable(std::shared_ptr<variable_node> variable, bool add_statement = false);
 
 	virtual bool operator==(ast_node const& rhs);
 };
@@ -194,6 +198,8 @@ public:
 	std::shared_ptr<type_node> return_type;
 	std::vector<std::shared_ptr<ast_node>> arguments;
 
+	void add_argument(std::shared_ptr<variable_node> node);
+
 	virtual bool operator==(ast_node const& rhs);
 };
 
@@ -204,7 +210,9 @@ public:
 	DECLARE_AST_NODE(structure_node, type_node)
 
 	std::vector<std::shared_ptr<ast_node>> children;
+	std::unordered_map<std::string, std::shared_ptr<variable_node>> variables;
 
+	void add_variable(std::shared_ptr<variable_node> variable);
 	virtual bool operator==(ast_node const& rhs);
 };
 
@@ -243,6 +251,23 @@ public:
 	std::shared_ptr<type_node> type;
 	std::string name;
 	uint8_t semantic_index = 0;
+
+	virtual bool operator==(ast_node const& rhs);
+};
+
+class variable_decl_node : public ast_node
+{
+public:
+	variable_decl_node() {}
+	variable_decl_node(std::shared_ptr<variable_node> variable) :
+		variable(variable)
+	{
+	}
+	DECLARE_AST_NODE(variable_decl_node, ast_node)
+
+	std::shared_ptr<variable_node> variable;
+
+	virtual bool operator==(ast_node const& rhs);
 };
 
 class constant_node : public ast_node
@@ -316,8 +341,6 @@ public:
 DEFINE_DERIVED_GLOBAL_VARIABLE_NODE(register_node)
 DEFINE_DERIVED_GLOBAL_VARIABLE_NODE(constant_buffer_node)
 DEFINE_DERIVED_GLOBAL_VARIABLE_NODE(immediate_constant_buffer_node)
-DEFINE_DERIVED_GLOBAL_VARIABLE_NODE(input_node)
-DEFINE_DERIVED_GLOBAL_VARIABLE_NODE(output_node)
 
 class vector_node : public ast_node
 {
@@ -367,7 +390,7 @@ public:
 	virtual ~variable_access_node() {};
 	DECLARE_AST_NODE(variable_access_node, ast_node)
 
-	std::shared_ptr<global_variable_node> value;
+	std::shared_ptr<ast_node> value;
 
 	virtual bool operator==(ast_node const& rhs);
 };
@@ -532,6 +555,7 @@ public:
 		DECLARE_AST_NODE(node_name, binary_expr_node) \
 	};
 
+DEFINE_DERIVED_BINARY_EXPR_NODE(dot_expr_node)
 DEFINE_DERIVED_BINARY_EXPR_NODE(assign_expr_node)
 DEFINE_DERIVED_BINARY_EXPR_NODE(add_expr_node)
 DEFINE_DERIVED_BINARY_EXPR_NODE(sub_expr_node)

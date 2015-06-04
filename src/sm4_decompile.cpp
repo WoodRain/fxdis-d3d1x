@@ -27,12 +27,15 @@ std::shared_ptr<super_node> decompiler::run()
 
 	this->decompile_declarations(input_struct, output_struct);
 
+	auto input_variable = std::make_shared<variable_node>(input_struct, "input");
+	auto output_variable = std::make_shared<variable_node>(output_struct, "output");
+
 	auto main_function = std::make_shared<function_node>();
 	main_function->name = "main";
 	main_function->parent = root;
 	main_function->return_type = output_struct;
-	main_function->arguments.push_back(
-		std::make_shared<variable_node>(input_struct, "input"));
+	main_function->add_argument(input_variable);
+	main_function->add_variable(output_variable, true);
 	
 	root->children.push_back(main_function);
 	root = main_function;
@@ -44,7 +47,7 @@ std::shared_ptr<super_node> decompiler::run()
 		case SM4_OPCODE_IF:
 		{
 			auto node = std::make_shared<if_node>();
-			auto comparand = decompile_operand(instruction, 0);
+			auto comparand = decompile_operand(root, instruction, 0);
 
 			std::shared_ptr<binary_expr_node> expression;
 			auto rhs = std::make_shared<vector_node>(0.0f);
@@ -111,9 +114,9 @@ std::shared_ptr<super_node> decompiler::run()
 			node->opcode = instruction->opcode;
 
 			for (size_t i = 1; i < instruction->num_ops; ++i)
-				node->arguments.push_back(decompile_operand(instruction, i));
+				node->arguments.push_back(decompile_operand(root, instruction, i));
 
-			std::shared_ptr<ast_node> lhs = decompile_operand(instruction, 0);
+			std::shared_ptr<ast_node> lhs = decompile_operand(root, instruction, 0);
 			std::shared_ptr<ast_node> rhs = node;
 			if (instruction->insn.sat)
 				rhs = std::make_shared<function_call_expr_node>("saturate", node);
@@ -182,7 +185,7 @@ void decompiler::decompile_declarations(
 			if (declaration->opcode == SM4_OPCODE_DCL_INPUT_SIV)
 				var_node->semantic_index = declaration->sv;
 
-			input->children.push_back(std::make_shared<expr_stmt_node>(var_node));
+			input->add_variable(var_node);
 			break;
 		}
 		case SM4_OPCODE_DCL_OUTPUT:
@@ -196,7 +199,7 @@ void decompiler::decompile_declarations(
 			if (declaration->opcode == SM4_OPCODE_DCL_OUTPUT_SIV)
 				var_node->semantic_index = declaration->sv;
 
-			output->children.push_back(std::make_shared<expr_stmt_node>(var_node));
+			output->add_variable(var_node);
 			break;
 		}
 		}
@@ -204,7 +207,7 @@ void decompiler::decompile_declarations(
 }
 
 std::shared_ptr<ast_node> decompiler::decompile_operand(
-	sm4::operand const* operand, sm4_opcode_type opcode_type)
+	std::shared_ptr<super_node> scope, sm4::operand const* operand, sm4_opcode_type opcode_type)
 {
 	std::shared_ptr<ast_node> node;
 
@@ -262,17 +265,40 @@ std::shared_ptr<ast_node> decompiler::decompile_operand(
 	{
 		auto index = operand->indices[0].disp;
 
+		auto input = scope->get_variable("input");
+		auto output = scope->get_variable("output");
+
+		auto input_struct = force_node_cast<structure_node>(input->type);
+		auto output_struct = force_node_cast<structure_node>(output->type);
+
+		auto variable_name = this->get_name(operand);
+
 		if (operand->file == SM4_FILE_TEMP)
+		{
 			node = std::make_shared<register_node>(index);
+		}
 		else if (operand->file == SM4_FILE_CONSTANT_BUFFER)
+		{
 			node = std::make_shared<constant_buffer_node>(index);
+		}
 		else if (operand->file == SM4_FILE_INPUT)
-			node = std::make_shared<input_node>(index);
+		{
+			auto variable = input_struct->variables[variable_name];
+			auto dot_exp = std::make_shared<dot_expr_node>(input, variable);
+
+			node = dot_exp;
+		}
 		else if (operand->file == SM4_FILE_OUTPUT)
-			node = std::make_shared<output_node>(index);
+		{
+			auto variable = output_struct->variables[variable_name];
+			auto dot_exp = std::make_shared<dot_expr_node>(output, variable);
+			node = dot_exp;
+		}
 		// There is only one ICB, and it is dynamically indexed
 		else if (operand->file == SM4_FILE_IMMEDIATE_CONSTANT_BUFFER)
+		{
 			node = std::make_shared<immediate_constant_buffer_node>();
+		}
 
 		auto dynamic_index = 
 			(operand->file == SM4_FILE_IMMEDIATE_CONSTANT_BUFFER) ? 0 : 1;
@@ -285,9 +311,12 @@ std::shared_ptr<ast_node> decompiler::decompile_operand(
 			auto indexing_node = std::make_shared<dynamic_index_node>();
 
 			if (operand_index.reg.get())
-				indexing_node->index = decompile_operand(operand_index.reg.get(), opcode_type);
+			{
+				indexing_node->index = 
+					decompile_operand(scope, operand_index.reg.get(), opcode_type);
+			}
 
-			indexing_node->value = force_node_cast<global_variable_node>(node);
+			indexing_node->value = node;
 			indexing_node->displacement = operand_index.disp;
 
 			node = indexing_node;
@@ -296,39 +325,28 @@ std::shared_ptr<ast_node> decompiler::decompile_operand(
 	
 	if (operand->comps)
 	{
-		auto gi_node = force_node_cast<global_variable_node>(node);
+		auto parent_node = std::make_shared<static_index_node>();
+		parent_node->value = node;
 
 		if (operand->mode == SM4_OPERAND_MODE_MASK && operand->mask)
 		{
-			auto parent_node = std::make_shared<static_index_node>();
-			parent_node->value = gi_node;
-
 			for (unsigned int i = 0; i < operand->comps; ++i)
 			{
 				if (operand->mask & (1 << i))
 					parent_node->indices.push_back(i);
 			}
-
-			node = parent_node;
 		}
 		else if (operand->mode == SM4_OPERAND_MODE_SWIZZLE)
 		{
-			auto parent_node = std::make_shared<static_index_node>();
-			parent_node->value = gi_node;
-
 			for (unsigned int i = 0; i < operand->comps; ++i)
 				parent_node->indices.push_back(operand->swizzle[i]);
-
-			node = parent_node;
 		}
 		else if (operand->mode == SM4_OPERAND_MODE_SCALAR)
 		{
-			auto parent_node = std::make_shared<static_index_node>();
-			parent_node->value = gi_node;
 			parent_node->indices.push_back(operand->swizzle[0]);
-
-			node = parent_node;
 		}
+		
+		node = parent_node;
 	}
 
 	if (operand->abs)
@@ -345,17 +363,17 @@ std::shared_ptr<ast_node> decompiler::decompile_operand(
 }
 
 std::shared_ptr<ast_node> decompiler::decompile_operand(
-	sm4::instruction const* instruction, int i)
+	std::shared_ptr<super_node> scope, sm4::instruction const* instruction, int i)
 {
 	auto operand = instruction->ops[i].get();
 	auto opcode_type = sm4_opcode_types[instruction->opcode];
 	
-	return decompile_operand(operand, opcode_type);
+	return decompile_operand(scope, operand, opcode_type);
 }
 
 std::string decompiler::get_name(sm4::operand const* operand)
 {
-	std::string ret = sm4_file_names[operand->file];
+	std::string ret = sm4_shortfile_names[operand->file];
 	
 	if (operand->indices[0].reg.get())
 		return ret;

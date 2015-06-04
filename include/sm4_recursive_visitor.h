@@ -13,8 +13,7 @@ public:
 	virtual void visit(dynamic_index_node* node);
 	virtual void visit(static_index_node* node);
 
-	virtual void visit(constant_node* node);
-	virtual void visit(global_variable_node* node);
+	virtual void visit(variable_decl_node* node);
 	virtual void visit(vector_node* node);
 
 	virtual void visit(comparison_node* node);
