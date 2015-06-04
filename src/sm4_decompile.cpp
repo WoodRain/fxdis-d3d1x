@@ -1,13 +1,221 @@
 #include "sm4_decompile.h"
-#include "sm4.h"
 #include <ostream>
 #include <string>
-#include <unordered_map>
 
 namespace sm4 {
 
+// Forgive me for I have sinned
+#define AST_NODE_CLASS(klass) \
+	void ast_visitor::visit(klass* node) \
+	{ \
+		this->visit((klass::base_class*)node); \
+	} \
+
+	AST_NODE_CLASSES
+
+#undef AST_NODE_CLASS
+
 // decompile
-std::shared_ptr<ast_node> decompile_operand(sm4::operand const* operand, sm4_opcode_type opcode_type)
+decompiler::decompiler(program const& program) :
+	program_(program)
+{
+}
+
+std::shared_ptr<super_node> decompiler::run()
+{
+	auto root = std::make_shared<super_node>();
+	auto const& p = this->program_;
+
+	auto input_struct = std::make_shared<structure_node>();
+	input_struct->name = "ShaderInput";
+	this->insert_type(input_struct->name, input_struct);
+	root->children.push_back(input_struct);
+
+	auto output_struct = std::make_shared<structure_node>();
+	output_struct->name = "ShaderOutput";
+	this->insert_type(output_struct->name, output_struct);
+	root->children.push_back(output_struct);
+
+	this->decompile_declarations(input_struct, output_struct);
+
+	auto main_function = std::make_shared<function_node>();
+	main_function->name = "main";
+	main_function->parent = root;
+	main_function->return_type = output_struct;
+	main_function->arguments.push_back(
+		std::make_shared<variable_node>(input_struct, "input"));
+	
+	root->children.push_back(main_function);
+	root = main_function;
+
+	for (auto const instruction : p.insns)
+	{
+		switch (instruction->opcode)
+		{
+		case SM4_OPCODE_IF:
+		{
+			auto node = std::make_shared<if_node>();
+			auto comparand = decompile_operand(instruction, 0);
+
+			std::shared_ptr<binary_expr_node> expression;
+			auto rhs = std::make_shared<vector_node>(0.0f);
+
+			if (instruction->insn.test_nz)
+				expression = std::make_shared<neq_expr_node>(comparand, rhs);
+			else
+				expression = std::make_shared<eq_expr_node>(comparand, rhs);
+
+			node->expression = expression;
+			node->parent = root;
+			node->parent->children.push_back(node);
+			root = node;
+			break;
+		}
+		
+		case SM4_OPCODE_ELSE:
+		{
+			auto node = std::make_shared<else_node>();
+			node->parent = root->parent;
+			node->parent->children.push_back(node);
+			root = node;
+			break;
+		}
+
+		case SM4_OPCODE_ENDIF:
+			root = root->parent;
+			break;
+
+		case SM4_OPCODE_RET:
+			root->children.push_back(std::make_shared<ret_node>());
+			break;
+
+		// Unary
+		case SM4_OPCODE_FRC:
+		case SM4_OPCODE_RSQ:
+		case SM4_OPCODE_ITOF:
+		case SM4_OPCODE_FTOI:
+		case SM4_OPCODE_FTOU:
+		case SM4_OPCODE_MOV:
+		case SM4_OPCODE_ROUND_NI:
+		case SM4_OPCODE_EXP:
+		// Binary
+		case SM4_OPCODE_MUL:
+		case SM4_OPCODE_DIV:
+		case SM4_OPCODE_ADD:
+		case SM4_OPCODE_DP3:
+		case SM4_OPCODE_DP4:
+		case SM4_OPCODE_ISHL:
+		case SM4_OPCODE_USHR:
+		case SM4_OPCODE_AND:
+		case SM4_OPCODE_OR:
+		case SM4_OPCODE_IADD:
+		case SM4_OPCODE_IEQ:
+		case SM4_OPCODE_GE:
+		case SM4_OPCODE_MAX:
+		case SM4_OPCODE_MIN:
+		case SM4_OPCODE_LT:
+		// Ternary
+		case SM4_OPCODE_MAD:
+		case SM4_OPCODE_MOVC:
+		{
+			auto node = std::make_shared<instruction_call_expr_node>();
+			node->opcode = instruction->opcode;
+
+			for (size_t i = 1; i < instruction->num_ops; ++i)
+				node->arguments.push_back(decompile_operand(instruction, i));
+
+			std::shared_ptr<ast_node> lhs = decompile_operand(instruction, 0);
+			std::shared_ptr<ast_node> rhs = node;
+			if (instruction->insn.sat)
+				rhs = std::make_shared<function_call_expr_node>("saturate", node);
+
+			auto assign_expr = std::make_shared<assign_expr_node>(lhs, rhs);
+			root->children.push_back(std::make_shared<expr_stmt_node>(assign_expr));
+			break;
+		}
+
+		default:
+			std::cerr << "Unhandled opcode: " << sm4_opcode_names[instruction->opcode] << "\n";
+			break;
+		};
+	}
+
+	root = main_function->parent;
+
+	return root;
+}
+
+std::shared_ptr<type_node> decompiler::get_type(std::string const& s)
+{
+	return this->types_[s];
+}
+
+void decompiler::insert_type(std::string const& s, std::shared_ptr<type_node> node)
+{
+	this->types_[s] = node;
+}
+
+void decompiler::decompile_declarations(
+	std::shared_ptr<structure_node> input, 
+	std::shared_ptr<structure_node> output)
+{
+	auto get_or_insert = 
+	[&](std::string const& s, value_type type, uint8_t count) -> std::shared_ptr<type_node>
+	{
+		auto name = s + (count > 1 ? std::to_string(count) : "");
+		auto node = this->get_type(name);
+
+		if (node)
+			return node;
+
+		auto new_node = std::make_shared<vector_type_node>();
+		new_node->type = type;
+		new_node->count = count;
+		new_node->name = name;
+
+		this->insert_type(name, new_node);
+
+		return new_node;
+	};
+
+	for (auto const declaration : this->program_.dcls)
+	{
+		switch (declaration->opcode)
+		{
+		case SM4_OPCODE_DCL_INPUT:
+		case SM4_OPCODE_DCL_INPUT_SIV:
+		{
+			auto var_node = std::make_shared<variable_node>();
+			auto size = get_size(declaration->op.get());
+			var_node->type = get_or_insert("float", value_type::f32, size);
+			var_node->name = get_name(declaration->op.get());
+
+			if (declaration->opcode == SM4_OPCODE_DCL_INPUT_SIV)
+				var_node->semantic_index = declaration->sv;
+
+			input->children.push_back(std::make_shared<expr_stmt_node>(var_node));
+			break;
+		}
+		case SM4_OPCODE_DCL_OUTPUT:
+		case SM4_OPCODE_DCL_OUTPUT_SIV:
+		{
+			auto var_node = std::make_shared<variable_node>();
+			auto size = get_size(declaration->op.get());
+			var_node->type = get_or_insert("float", value_type::f32, size);
+			var_node->name = get_name(declaration->op.get());
+
+			if (declaration->opcode == SM4_OPCODE_DCL_OUTPUT_SIV)
+				var_node->semantic_index = declaration->sv;
+
+			output->children.push_back(std::make_shared<expr_stmt_node>(var_node));
+			break;
+		}
+		}
+	}
+}
+
+std::shared_ptr<ast_node> decompiler::decompile_operand(
+	sm4::operand const* operand, sm4_opcode_type opcode_type)
 {
 	std::shared_ptr<ast_node> node;
 
@@ -147,7 +355,8 @@ std::shared_ptr<ast_node> decompile_operand(sm4::operand const* operand, sm4_opc
 	return node;
 }
 
-std::shared_ptr<ast_node> decompile_operand(sm4::instruction const* instruction, int i)
+std::shared_ptr<ast_node> decompiler::decompile_operand(
+	sm4::instruction const* instruction, int i)
 {
 	auto operand = instruction->ops[i].get();
 	auto opcode_type = sm4_opcode_types[instruction->opcode];
@@ -155,15 +364,7 @@ std::shared_ptr<ast_node> decompile_operand(sm4::instruction const* instruction,
 	return decompile_operand(operand, opcode_type);
 }
 
-std::shared_ptr<ast_node> saturate_if_necessary(sm4::instruction const* instruction, std::shared_ptr<ast_node> node)
-{
-	if (instruction->insn.sat)
-		return std::make_shared<function_call_expr_node>("saturate", node);
-
-	return node;
-}
-
-std::string get_name(sm4::operand const* operand)
+std::string decompiler::get_name(sm4::operand const* operand)
 {
 	std::string ret = sm4_file_names[operand->file];
 	
@@ -175,7 +376,7 @@ std::string get_name(sm4::operand const* operand)
 	return ret;
 }
 
-uint8_t get_size(sm4::operand const* operand)
+uint8_t decompiler::get_size(sm4::operand const* operand)
 {
 	uint8_t ret = 0;
 
@@ -197,201 +398,5 @@ uint8_t get_size(sm4::operand const* operand)
 	return ret;
 }
 
-std::shared_ptr<super_node> decompile(program const* p)
-{
-	auto root = std::make_shared<super_node>();
-
-	std::string struct_prefix;
-	if (p->version.type == 0)
-		struct_prefix = "Pixel";
-	else if (p->version.type == 1)
-		struct_prefix = "Vertex";
-	else if (p->version.type == 2)
-		struct_prefix = "Geometry";
-
-	std::unordered_map<std::string, std::shared_ptr<type_node>> types;
-	auto get_or_insert = [&](std::string const& s, value_type type, uint8_t count) -> std::shared_ptr<type_node>
-	{
-		auto name = s + (count > 1 ? std::to_string(count) : "");
-
-		auto it = types.find(name);
-
-		if (it != types.end())
-			return it->second;
-
-		auto new_node = std::make_shared<vector_type_node>();
-		new_node->type = type;
-		new_node->count = count;
-		new_node->name = name;
-
-		types[name] = new_node;
-
-		return new_node;
-	};
-
-	auto input_struct = std::make_shared<structure_node>();
-	input_struct->name = struct_prefix + "Input";
-	types[input_struct->name] = input_struct;
-
-	auto output_struct = std::make_shared<structure_node>();
-	output_struct->name = struct_prefix + "Output";
-	types[output_struct->name] = output_struct;
-
-	for (auto const declaration : p->dcls)
-	{
-		switch (declaration->opcode)
-		{
-		case SM4_OPCODE_DCL_INPUT:
-		case SM4_OPCODE_DCL_INPUT_SIV:
-		{
-			auto var_node = std::make_shared<variable_node>();
-			auto size = get_size(declaration->op.get());
-			var_node->type = get_or_insert("float", value_type::f32, size);
-			var_node->name = get_name(declaration->op.get());
-
-			if (declaration->opcode == SM4_OPCODE_DCL_INPUT_SIV)
-				var_node->semantic_index = declaration->sv;
-
-			input_struct->children.push_back(
-				std::make_shared<expr_stmt_node>(var_node));
-			break;
-		}
-		case SM4_OPCODE_DCL_OUTPUT:
-		case SM4_OPCODE_DCL_OUTPUT_SIV:
-		{
-			auto var_node = std::make_shared<variable_node>();
-			auto size = get_size(declaration->op.get());
-			var_node->type = get_or_insert("float", value_type::f32, size);
-			var_node->name = get_name(declaration->op.get());
-
-			if (declaration->opcode == SM4_OPCODE_DCL_OUTPUT_SIV)
-				var_node->semantic_index = declaration->sv;
-
-			output_struct->children.push_back(
-				std::make_shared<expr_stmt_node>(var_node));
-			break;
-		}
-		}
-	}
-
-	root->children.push_back(input_struct);
-	root->children.push_back(output_struct);
-
-	auto main_function = std::make_shared<function_node>();
-	main_function->name = "main";
-	main_function->parent = root;
-	main_function->return_type = output_struct;
-	main_function->arguments.push_back(
-		std::make_shared<variable_node>(input_struct, "input"));
-	
-	root->children.push_back(main_function);
-	root = main_function;
-
-	for (auto const instruction : p->insns)
-	{
-		switch (instruction->opcode)
-		{
-		case SM4_OPCODE_IF:
-		{
-			auto node = std::make_shared<if_node>();
-			auto comparand = decompile_operand(instruction, 0);
-
-			std::shared_ptr<binary_expr_node> expression;
-			auto rhs = std::make_shared<vector_node>(0.0f);
-
-			if (instruction->insn.test_nz)
-				expression = std::make_shared<neq_expr_node>(comparand, rhs);
-			else
-				expression = std::make_shared<eq_expr_node>(comparand, rhs);
-
-			node->expression = expression;
-			node->parent = root;
-			node->parent->children.push_back(node);
-			root = node;
-			break;
-		}
-		
-		case SM4_OPCODE_ELSE:
-		{
-			auto node = std::make_shared<else_node>();
-			node->parent = root->parent;
-			node->parent->children.push_back(node);
-			root = node;
-			break;
-		}
-
-		case SM4_OPCODE_ENDIF:
-			root = root->parent;
-			break;
-
-		case SM4_OPCODE_RET:
-			root->children.push_back(std::make_shared<ret_node>());
-			break;
-
-		// Unary
-		case SM4_OPCODE_FRC:
-		case SM4_OPCODE_RSQ:
-		case SM4_OPCODE_ITOF:
-		case SM4_OPCODE_FTOI:
-		case SM4_OPCODE_FTOU:
-		case SM4_OPCODE_MOV:
-		case SM4_OPCODE_ROUND_NI:
-		case SM4_OPCODE_EXP:
-		// Binary
-		case SM4_OPCODE_MUL:
-		case SM4_OPCODE_DIV:
-		case SM4_OPCODE_ADD:
-		case SM4_OPCODE_DP3:
-		case SM4_OPCODE_DP4:
-		case SM4_OPCODE_ISHL:
-		case SM4_OPCODE_USHR:
-		case SM4_OPCODE_AND:
-		case SM4_OPCODE_OR:
-		case SM4_OPCODE_IADD:
-		case SM4_OPCODE_IEQ:
-		case SM4_OPCODE_GE:
-		case SM4_OPCODE_MAX:
-		case SM4_OPCODE_MIN:
-		case SM4_OPCODE_LT:
-		// Ternary
-		case SM4_OPCODE_MAD:
-		case SM4_OPCODE_MOVC:
-		{
-			auto node = std::make_shared<instruction_call_expr_node>();
-			node->opcode = instruction->opcode;
-
-			for (size_t i = 1; i < instruction->num_ops; ++i)
-				node->arguments.push_back(decompile_operand(instruction, i));
-
-			auto assign_expr = std::make_shared<assign_expr_node>(
-				decompile_operand(instruction, 0),
-				saturate_if_necessary(instruction, node)
-			);
-
-			root->children.push_back(std::make_shared<expr_stmt_node>(assign_expr));
-			break;
-		}
-
-		default:
-			std::cerr << "Unhandled opcode: " << sm4_opcode_names[instruction->opcode] << "\n";
-			break;
-		};
-	}
-
-	root = main_function->parent;
-
-	return root;
-}
-
-// Forgive me for I have sinned
-#define AST_NODE_CLASS(klass) \
-	void ast_visitor::visit(klass* node) \
-	{ \
-		this->visit((klass::base_class*)node); \
-	} \
-
-	AST_NODE_CLASSES
-
-#undef AST_NODE_CLASS
 
 }

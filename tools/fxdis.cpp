@@ -137,7 +137,8 @@ int main(int argc, char** argv)
 
 	if (decompile)
 	{
-		auto root_node = sm4::decompile(sm4_p.get());
+		sm4::decompiler decompiler(*sm4_p);
+		auto root_node = decompiler.run();
 		
 		if (process)
 		{

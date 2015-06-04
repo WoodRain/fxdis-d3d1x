@@ -4,10 +4,8 @@
 #include <stdint.h>
 #include <memory>
 #include <vector>
-
-struct sm4_program;
-struct sm4_insn;
-struct sm4_op;
+#include <unordered_map>
+#include "sm4.h"
 
 namespace sm4 {
 
@@ -742,8 +740,30 @@ DEFINE_DERIVED_BINARY_EXPR_NODE(div_expr_node)
 DEFINE_DERIVED_BINARY_EXPR_NODE(eq_expr_node)
 DEFINE_DERIVED_BINARY_EXPR_NODE(neq_expr_node)
 
+class decompiler
+{
+public:
+	decompiler(sm4::program const& program);
+	std::shared_ptr<super_node> run();
 
-std::shared_ptr<super_node> decompile(program const* p);
+	void operator=(decompiler const& rhs) = delete;
+
+	std::shared_ptr<type_node> get_type(std::string const& s);
+	void insert_type(std::string const& s, std::shared_ptr<type_node> node);
+
+private:
+	void decompile_declarations(
+		std::shared_ptr<structure_node> input, 
+		std::shared_ptr<structure_node> output);
+
+	std::shared_ptr<ast_node> decompile_operand(operand const* operand, sm4_opcode_type opcode_type);
+	std::shared_ptr<ast_node> decompile_operand(instruction const* instruction, int i);
+	std::string get_name(sm4::operand const* operand);
+	uint8_t get_size(sm4::operand const* operand);
+
+	program const& program_;
+	std::unordered_map<std::string, std::shared_ptr<type_node>> types_;
+};
 
 }
 
