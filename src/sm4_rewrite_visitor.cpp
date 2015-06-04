@@ -233,6 +233,14 @@ void rewrite_node(std::shared_ptr<ast_node>& node)
 		rewrite_mul_expr_node(node);
 }
 
+void rewrite_visitor::visit(variable_node* node)
+{
+	if (node->semantic_index != SM4_SV_UNDEFINED)
+		node->name = sm4_sv_names[node->semantic_index];
+
+	node->type->accept(*this);
+}
+
 void rewrite_visitor::visit(unary_expr_node* node)
 {
 	rewrite_node(node->value);
