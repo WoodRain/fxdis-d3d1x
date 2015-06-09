@@ -118,9 +118,9 @@ public:
 	virtual ~ast_node() {};
 	bool is_type(node_type type) const { return this->get_type() == type; }
 
-	virtual bool operator==(ast_node const&) 
+	virtual bool operator==(ast_node const& rhs) 
 	{ 
-		return true; 
+		return this->is_type(rhs.get_type()); 
 	}
 
 	bool operator!=(ast_node const& rhs)

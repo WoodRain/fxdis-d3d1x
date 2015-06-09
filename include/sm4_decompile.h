@@ -19,6 +19,7 @@ public:
 
 private:
 	void decompile_declarations(
+		std::shared_ptr<super_node> scope,
 		std::shared_ptr<structure_node> input, 
 		std::shared_ptr<structure_node> output);
 

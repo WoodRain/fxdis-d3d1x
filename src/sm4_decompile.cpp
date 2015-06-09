@@ -25,7 +25,7 @@ std::shared_ptr<super_node> decompiler::run()
 	this->insert_type(output_struct->name, output_struct);
 	root->children.push_back(output_struct);
 
-	this->decompile_declarations(input_struct, output_struct);
+	this->decompile_declarations(root, input_struct, output_struct);
 
 	auto input_variable = std::make_shared<variable_node>(input_struct, "input");
 	auto output_variable = std::make_shared<variable_node>(output_struct, "output");
@@ -148,6 +148,7 @@ void decompiler::insert_type(std::string const& s, std::shared_ptr<type_node> no
 }
 
 void decompiler::decompile_declarations(
+	std::shared_ptr<super_node> scope,
 	std::shared_ptr<structure_node> input, 
 	std::shared_ptr<structure_node> output)
 {
@@ -169,6 +170,11 @@ void decompiler::decompile_declarations(
 
 		return new_node;
 	};
+
+	get_or_insert("float", value_type::f32, 1);
+	get_or_insert("float", value_type::f32, 2);
+	get_or_insert("float", value_type::f32, 3);
+	get_or_insert("float", value_type::f32, 4);
 
 	for (auto const declaration : this->program_.dcls)
 	{
@@ -201,6 +207,17 @@ void decompiler::decompile_declarations(
 
 			output->add_variable(var_node);
 			break;
+		}
+		case SM4_OPCODE_DCL_TEMPS:
+		{
+			for (size_t i = 0; i < declaration->num; ++i)
+			{
+				auto var_node = std::make_shared<variable_node>();
+				var_node->type = this->get_type("float4");
+				var_node->name = "register" + std::to_string(i);
+
+				scope->add_variable(var_node);
+			}
 		}
 		}
 	}
@@ -275,7 +292,7 @@ std::shared_ptr<ast_node> decompiler::decompile_operand(
 
 		if (operand->file == SM4_FILE_TEMP)
 		{
-			node = std::make_shared<register_node>(index);
+			node = scope->get_variable("register" + std::to_string(index));
 		}
 		else if (operand->file == SM4_FILE_CONSTANT_BUFFER)
 		{

@@ -41,6 +41,8 @@ void super_node::add_variable(std::shared_ptr<variable_node> variable, bool add_
 bool super_node::operator==(ast_node const& rhs) 
 { 
 	auto ret = base_class::operator==(rhs);
+	if (!ret) return false;
+
 	auto typed_rhs = static_cast<this_class const&>(rhs);
 
 	ret &= (*this->parent == *typed_rhs.parent);
@@ -52,6 +54,8 @@ bool super_node::operator==(ast_node const& rhs)
 bool type_node::operator==(ast_node const& rhs) 
 { 
 	auto ret = base_class::operator==(rhs);
+	if (!ret) return false;
+
 	auto typed_rhs = static_cast<this_class const&>(rhs);
 
 	ret &= (this->name == typed_rhs.name);
@@ -62,6 +66,8 @@ bool type_node::operator==(ast_node const& rhs)
 bool vector_type_node::operator==(ast_node const& rhs) 
 { 
 	auto ret = base_class::operator==(rhs);
+	if (!ret) return false;
+
 	auto typed_rhs = static_cast<this_class const&>(rhs);
 
 	ret &= (this->type == typed_rhs.type);
@@ -79,6 +85,8 @@ void function_node::add_argument(std::shared_ptr<variable_node> variable)
 bool function_node::operator==(ast_node const& rhs) 
 { 
 	auto ret = base_class::operator==(rhs);
+	if (!ret) return false;
+
 	auto typed_rhs = static_cast<this_class const&>(rhs);
 
 	ret &= (this->name == typed_rhs.name);
@@ -100,6 +108,8 @@ void structure_node::add_variable(std::shared_ptr<variable_node> variable)
 bool structure_node::operator==(ast_node const& rhs) 
 { 
 	auto ret = base_class::operator==(rhs);
+	if (!ret) return false;
+
 	auto typed_rhs = static_cast<this_class const&>(rhs);
 
 	ret &= (this->name == typed_rhs.name);
@@ -110,6 +120,8 @@ bool structure_node::operator==(ast_node const& rhs)
 bool variable_node::operator==(ast_node const& rhs) 
 {
 	auto ret = base_class::operator==(rhs);
+	if (!ret) return false;
+
 	auto typed_rhs = static_cast<this_class const&>(rhs);
 
 	ret &= (*this->type == *typed_rhs.type);
@@ -122,6 +134,8 @@ bool variable_node::operator==(ast_node const& rhs)
 bool variable_decl_node::operator==(ast_node const& rhs)
 {
 	auto ret = base_class::operator==(rhs);
+	if (!ret) return false;
+
 	auto typed_rhs = static_cast<this_class const&>(rhs);
 
 	ret &= (*this->variable == *typed_rhs.variable);
@@ -171,6 +185,8 @@ bool constant_node::is_64bit()
 bool constant_node::operator==(ast_node const& rhs) 
 { 
 	auto ret = base_class::operator==(rhs);
+	if (!ret) return false;
+
 	auto typed_rhs = static_cast<this_class const&>(rhs);
 
 	ret &= (this->current_type == typed_rhs.current_type);
@@ -186,6 +202,8 @@ bool constant_node::operator==(ast_node const& rhs)
 bool global_variable_node::operator==(ast_node const& rhs) 
 { 
 	auto ret = base_class::operator==(rhs);
+	if (!ret) return false;
+
 	auto typed_rhs = static_cast<this_class const&>(rhs);
 
 	ret &= (this->index == typed_rhs.index);
@@ -196,6 +214,8 @@ bool global_variable_node::operator==(ast_node const& rhs)
 bool vector_node::operator==(ast_node const& rhs) 
 { 
 	auto ret = base_class::operator==(rhs);
+	if (!ret) return false;
+
 	auto typed_rhs = static_cast<this_class const&>(rhs);
 
 	ret &= (this->values == typed_rhs.values);
@@ -206,6 +226,8 @@ bool vector_node::operator==(ast_node const& rhs)
 bool variable_access_node::operator==(ast_node const& rhs) 
 { 
 	auto ret = base_class::operator==(rhs);
+	if (!ret) return false;
+
 	auto typed_rhs = static_cast<this_class const&>(rhs);
 
 	ret &= (*this->value == *typed_rhs.value);
@@ -216,6 +238,8 @@ bool variable_access_node::operator==(ast_node const& rhs)
 bool static_index_node::operator==(ast_node const& rhs) 
 { 
 	auto ret = base_class::operator==(rhs);
+	if (!ret) return false;
+
 	auto typed_rhs = static_cast<this_class const&>(rhs);
 
 	ret &= (this->indices == typed_rhs.indices);
@@ -226,6 +250,8 @@ bool static_index_node::operator==(ast_node const& rhs)
 bool dynamic_index_node::operator==(ast_node const& rhs) 
 { 
 	auto ret = base_class::operator==(rhs);
+	if (!ret) return false;
+
 	auto typed_rhs = static_cast<this_class const&>(rhs);
 
 	ret &= (*this->value == *typed_rhs.value);
@@ -237,6 +263,8 @@ bool dynamic_index_node::operator==(ast_node const& rhs)
 bool comparison_node::operator==(ast_node const& rhs) 
 { 
 	auto ret = base_class::operator==(rhs);
+	if (!ret) return false;
+
 	auto typed_rhs = static_cast<this_class const&>(rhs);
 
 	ret &= (*this->expression == *typed_rhs.expression);
@@ -247,6 +275,8 @@ bool comparison_node::operator==(ast_node const& rhs)
 bool call_expr_node::operator==(ast_node const& rhs) 
 { 
 	auto ret = base_class::operator==(rhs);
+	if (!ret) return false;
+
 	auto typed_rhs = static_cast<this_class const&>(rhs);
 
 	ret &= (this->arguments == typed_rhs.arguments);
@@ -257,6 +287,8 @@ bool call_expr_node::operator==(ast_node const& rhs)
 bool function_call_expr_node::operator==(ast_node const& rhs) 
 { 
 	auto ret = base_class::operator==(rhs);
+	if (!ret) return false;
+
 	auto typed_rhs = static_cast<this_class const&>(rhs);
 
 	ret &= (this->name == typed_rhs.name);
@@ -267,6 +299,8 @@ bool function_call_expr_node::operator==(ast_node const& rhs)
 bool instruction_call_expr_node::operator==(ast_node const& rhs) 
 { 
 	auto ret = base_class::operator==(rhs);
+	if (!ret) return false;
+
 	auto typed_rhs = static_cast<this_class const&>(rhs);
 
 	ret &= (this->opcode == typed_rhs.opcode);
@@ -277,6 +311,8 @@ bool instruction_call_expr_node::operator==(ast_node const& rhs)
 bool unary_expr_node::operator==(ast_node const& rhs) 
 { 
 	auto ret = base_class::operator==(rhs);
+	if (!ret) return false;
+
 	auto typed_rhs = static_cast<this_class const&>(rhs);
 
 	ret &= (*this->value == *typed_rhs.value);
@@ -287,6 +323,8 @@ bool unary_expr_node::operator==(ast_node const& rhs)
 bool binary_expr_node::operator==(ast_node const& rhs) 
 { 
 	auto ret = base_class::operator==(rhs);
+	if (!ret) return false;
+
 	auto typed_rhs = static_cast<this_class const&>(rhs);
 
 	ret &= (*this->lhs == *typed_rhs.lhs);

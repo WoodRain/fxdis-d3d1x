@@ -30,6 +30,7 @@
 #include "sm4_dump_visitor.h"
 #include "sm4_text_visitor.h"
 #include "sm4_rewrite_visitor.h"
+#include "sm4_variable_creation_visitor.h"
 
 #include <iostream>
 #include <fstream>
@@ -142,21 +143,23 @@ int main(int argc, char** argv)
 		
 		if (process)
 		{
-			sm4::rewrite_visitor sub_visitor;
+			sm4::rewrite_visitor rewrite;
+			sm4::variable_creation_visitor variable_creation(&decompiler);
 
 			// pass 1
-			root_node->accept(sub_visitor);
+			root_node->accept(rewrite);
+			root_node->accept(variable_creation);
 		}
 
 		if (dump_ast)
 		{
-			sm4::dump_visitor visitor(std::cout);
-			root_node->accept(visitor);
+			sm4::dump_visitor dump(std::cout);
+			root_node->accept(dump);
 		}
 		else
 		{
-			sm4::text_visitor visitor(std::cout);
-			root_node->accept(visitor);
+			sm4::text_visitor text(std::cout);
+			root_node->accept(text);
 		}
 	}
 	else

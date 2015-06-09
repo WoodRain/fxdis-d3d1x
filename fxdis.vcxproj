@@ -98,6 +98,7 @@
     <ClCompile Include="src\sm4_rewrite_visitor.cpp" />
     <ClCompile Include="src\sm4_recursive_visitor.cpp" />
     <ClCompile Include="src\sm4_text_visitor.cpp" />
+    <ClCompile Include="src\sm4_variable_creation_visitor.cpp" />
     <ClCompile Include="tools\fxdis.cpp" />
     <ClCompile Include="src\sm4_analyze.cpp" />
     <ClCompile Include="src\sm4_dump.cpp" />
@@ -115,6 +116,7 @@
     <ClInclude Include="include\sm4_rewrite_visitor.h" />
     <ClInclude Include="include\sm4_recursive_visitor.h" />
     <ClInclude Include="include\sm4_text_visitor.h" />
+    <ClInclude Include="include\sm4_variable_creation_visitor.h" />
     <ClInclude Include="include\utils.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

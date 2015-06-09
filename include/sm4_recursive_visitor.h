@@ -23,6 +23,12 @@ public:
 	virtual void visit(unary_expr_node* node);
 
 	virtual void visit(binary_expr_node* node);
+
+	template <typename T>
+	void visit_base(T* node)
+	{
+		this->visit(static_cast<T::base_class*>(node));
+	}
 };
 
 }
