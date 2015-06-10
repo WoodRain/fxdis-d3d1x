@@ -17,13 +17,13 @@
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
-    <ConfigurationType>Application</ConfigurationType>
+    <ConfigurationType>StaticLibrary</ConfigurationType>
     <PlatformToolset>v120</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
     <WholeProgramOptimization>true</WholeProgramOptimization>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
-    <ConfigurationType>Application</ConfigurationType>
+    <ConfigurationType>StaticLibrary</ConfigurationType>
     <PlatformToolset>v120</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
@@ -92,7 +92,6 @@
     <ClCompile Include="src\dxbc_assemble.cpp" />
     <ClCompile Include="src\dxbc_dump.cpp" />
     <ClCompile Include="src\dxbc_parse.cpp" />
-    <ClCompile Include="tools\fxdis.cpp" />
     <ClCompile Include="src\sm4_analyze.cpp" />
     <ClCompile Include="src\sm4_dump.cpp" />
     <ClCompile Include="src\sm4_parse.cpp" />

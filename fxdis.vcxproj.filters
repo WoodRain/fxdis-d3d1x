@@ -24,9 +24,6 @@
     <ClCompile Include="src\dxbc_parse.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="tools\fxdis.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="src\sm4_analyze.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>

@@ -26,6 +26,7 @@
 
 #include "sm4.h"
 #include "utils.h"
+#include "dxbc.h"
 
 #if 1
 #define check(x) assert(x)
@@ -450,4 +451,34 @@ sm4_program* sm4_parse(void* tokens, int size)
       return program;
    delete program;
    return 0;
+}
+
+sm4_program* sm4_parse_file(uint8_t* data, size_t size)
+{
+    std::unique_ptr<dxbc_container> dxbc(dxbc_parse(data, size));
+	if (!dxbc)
+		return nullptr;
+
+    dxbc_chunk_header* sm4_chunk = dxbc_find_shader_bytecode(data, size);
+	if (!sm4_chunk)
+		return nullptr;
+
+	sm4_program* sm4 = sm4_parse(sm4_chunk + 1, bswap_le32(sm4_chunk->size));
+
+	return sm4;
+}
+
+void sm4_destroy_program(sm4_program* program)
+{
+	delete program;
+}
+
+array_view sm4_program_get_dcls(sm4_program* program)
+{
+	return {program->dcls.data(), program->dcls.size()};
+}
+
+array_view sm4_program_get_insns(sm4_program* program)
+{
+	return {program->insns.data(), program->insns.size()};
 }
