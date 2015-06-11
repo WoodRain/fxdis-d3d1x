@@ -470,7 +470,7 @@ void* sm4_parse_file(uint8_t* data, uint32_t size)
 
 void sm4_destroy_program(void* program)
 {
-	delete program;
+	delete static_cast<sm4_program*>(program);
 }
 
 array_view sm4_program_get_dcls(void* program)
