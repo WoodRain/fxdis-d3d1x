@@ -129,6 +129,6 @@ struct _D3D11_SIGNATURE_PARAMETER_DESC;
 typedef struct _D3D11_SIGNATURE_PARAMETER_DESC D3D11_SIGNATURE_PARAMETER_DESC;
 int dxbc_parse_signature(dxbc_chunk_signature* sig, D3D11_SIGNATURE_PARAMETER_DESC** params);
 
-std::pair<void*, size_t> dxbc_assemble(struct dxbc_chunk_header** chunks, unsigned num_chunks);
+std::pair<void*, uint32_t> dxbc_assemble(struct dxbc_chunk_header** chunks, unsigned num_chunks);
 
 #endif /* DXBC_H_ */

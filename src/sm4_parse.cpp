@@ -453,7 +453,7 @@ sm4_program* sm4_parse(void* tokens, int size)
    return 0;
 }
 
-sm4_program* sm4_parse_file(uint8_t* data, size_t size)
+void* sm4_parse_file(uint8_t* data, uint32_t size)
 {
     std::unique_ptr<dxbc_container> dxbc(dxbc_parse(data, size));
 	if (!dxbc)
@@ -468,17 +468,19 @@ sm4_program* sm4_parse_file(uint8_t* data, size_t size)
 	return sm4;
 }
 
-void sm4_destroy_program(sm4_program* program)
+void sm4_destroy_program(void* program)
 {
 	delete program;
 }
 
-array_view sm4_program_get_dcls(sm4_program* program)
+array_view sm4_program_get_dcls(void* program)
 {
-	return {program->dcls.data(), program->dcls.size()};
+	sm4_program* p = static_cast<sm4_program*>(program);
+	return {p->dcls.data(), p->dcls.size()};
 }
 
-array_view sm4_program_get_insns(sm4_program* program)
+array_view sm4_program_get_insns(void* program)
 {
-	return {program->insns.data(), program->insns.size()};
+	sm4_program* p = static_cast<sm4_program*>(program);
+	return {p->insns.data(), p->insns.size()};
 }

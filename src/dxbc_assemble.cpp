@@ -28,13 +28,13 @@
 #include <string.h>
 #include "dxbc.h"
 
-std::pair<void*, size_t> dxbc_assemble(struct dxbc_chunk_header** chunks, unsigned num_chunks)
+std::pair<void*, uint32_t> dxbc_assemble(struct dxbc_chunk_header** chunks, unsigned num_chunks)
 {
-   size_t data_size = 0;
+   uint32_t data_size = 0;
    for(unsigned i = 0; i < num_chunks; ++i)
       data_size += sizeof(uint32_t) + sizeof(dxbc_chunk_header) + bswap_le32(chunks[i]->size);
 
-   size_t total_size = sizeof(dxbc_container_header) + data_size;
+   uint32_t total_size = sizeof(dxbc_container_header) + data_size;
    dxbc_container_header* header = (dxbc_container_header*)malloc(total_size);
    if(!header)
       return std::make_pair((void*)0, 0);
