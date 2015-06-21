@@ -2,3 +2,7 @@
 /Release
 *.opensdf
 *.sdf
+/x64
+/*.lib
+/*.suo
+/*.user
