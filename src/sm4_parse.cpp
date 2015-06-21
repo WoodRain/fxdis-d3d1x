@@ -473,14 +473,14 @@ void sm4_destroy_program(void* program)
 	delete static_cast<sm4_program*>(program);
 }
 
-array_view sm4_program_get_dcls(void* program)
+array_view sm4_program_get_dcls(void const* program)
 {
-	sm4_program* p = static_cast<sm4_program*>(program);
+	auto p = static_cast<sm4_program const*>(program);
 	return {p->dcls.data(), p->dcls.size()};
 }
 
-array_view sm4_program_get_insns(void* program)
+array_view sm4_program_get_insns(void const* program)
 {
-	sm4_program* p = static_cast<sm4_program*>(program);
+	auto p = static_cast<sm4_program const*>(program);
 	return {p->insns.data(), p->insns.size()};
 }

@@ -441,15 +441,15 @@ private:
 
 struct array_view
 {
-	void* data;
+	void const* data;
 	uint32_t size;
 };
 
 sm4_program* sm4_parse(void* tokens, int size);
 void* sm4_parse_file(uint8_t* data, uint32_t size);
 void sm4_destroy_program(void* program);
-array_view sm4_program_get_dcls(void* program);
-array_view sm4_program_get_insns(void* program);
+array_view sm4_program_get_dcls(void const* program);
+array_view sm4_program_get_insns(void const* program);
 
 bool sm4_link_cf_insns(sm4_program& program);
 bool sm4_find_labels(sm4_program& program);
