@@ -279,7 +279,7 @@ struct sm4_op
    struct
    {
       int64_t disp;
-      std::auto_ptr<sm4_op> reg;
+      std::unique_ptr<sm4_op> reg;
    } indices[3];
 
    bool is_index_simple(unsigned i) const
@@ -315,7 +315,7 @@ struct sm4_insn : public sm4_token_instruction
 
    unsigned num;
    unsigned num_ops;
-   std::auto_ptr<sm4_op> ops[SM4_MAX_OPS];
+   std::unique_ptr<sm4_op> ops[SM4_MAX_OPS];
 
    sm4_insn()
    {
@@ -331,7 +331,7 @@ private:
 
 struct sm4_dcl : public sm4_token_instruction
 {
-   std::auto_ptr<sm4_op> op;
+   std::unique_ptr<sm4_op> op;
    union
    {
       unsigned num;

@@ -476,11 +476,11 @@ void sm4_destroy_program(void* program)
 array_view sm4_program_get_dcls(void const* program)
 {
 	auto p = static_cast<sm4_program const*>(program);
-	return {p->dcls.data(), p->dcls.size()};
+	return {p->dcls.data(), static_cast<uint32_t>(p->dcls.size())};
 }
 
 array_view sm4_program_get_insns(void const* program)
 {
 	auto p = static_cast<sm4_program const*>(program);
-	return {p->insns.data(), p->insns.size()};
+	return {p->insns.data(), static_cast<uint32_t>(p->insns.size())};
 }
