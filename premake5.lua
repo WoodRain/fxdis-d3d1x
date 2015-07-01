@@ -6,11 +6,11 @@ solution "fxdis-d3d1x"
 		language "C++"
 		targetdir ""
 
-		configuration { "gmake" }
-			buildoptions { "-std=c++11" }
+		architecture "x64"
 
 		includedirs { "include/" }
 		files { "include/**.hpp", "src/**.cpp" }
+		flags { "StaticRuntime" }
 
 		filter "configurations:Debug"
 			defines { "DEBUG" }
@@ -19,3 +19,6 @@ solution "fxdis-d3d1x"
 		filter "configurations:Release"
 			defines { "NDEBUG" }
 			optimize "On"
+
+		configuration { "gmake" }
+			buildoptions { "-std=c++11" }
