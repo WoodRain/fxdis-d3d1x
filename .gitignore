@@ -6,3 +6,6 @@
 /*.lib
 /*.suo
 /*.user
+/obj
+/*.sln
+/*.vcxproj
