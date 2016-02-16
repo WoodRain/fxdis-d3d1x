@@ -9,3 +9,5 @@
 /obj
 /*.sln
 /*.vcxproj
+/.vs/fxdis-d3d1x/v14/*.suo
+/*.pdb
