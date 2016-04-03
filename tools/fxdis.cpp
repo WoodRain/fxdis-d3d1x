@@ -25,7 +25,7 @@
  **************************************************************************/
 
 #include "dxbc.h"
-#include "sm4.h"
+#include "D3D11TokenParser.h"
 #include <iostream>
 #include <fstream>
 
@@ -57,7 +57,7 @@ int main(int argc, char** argv)
 #endif
     if ( !pFile )
     {
-       printf("Could not open file: %s\n", pFile );
+       printf("Could not open file: %s\n", argv[1] );
        return EXIT_FAILURE;
     }
 
@@ -79,22 +79,18 @@ int main(int argc, char** argv)
     }
     fclose(pFile);
 
-    dxbc_container* dxbc = dxbc_parse(&data[0], data.size());
-    if(dxbc)
-    {
-        std::cout << *dxbc;
-        dxbc_chunk_header* sm4_chunk = dxbc_find_shader_bytecode(&data[0], data.size());
-        if(sm4_chunk)
-        {
-            sm4_program* sm4 = sm4_parse(sm4_chunk + 1, bswap_le32(sm4_chunk->size));
-            if(sm4)
-            {
-                std::cout << *sm4;
-                delete sm4;
-            }
-        }
-        delete dxbc;
-    }
+	dxbc_container* dxbc = dxbc_parse(&data[0], data.size());
+	dxbc_chunk_header* sm4_chunk = nullptr;
+	if (dxbc)
+	{
+		std::cout << *dxbc;
+		sm4_chunk = dxbc_find_shader_bytecode(&data[0], data.size());
+	}
+
+	// If no sm4 chuck is found, parse the binary as SM4/5 tokens from the very beginning.
+	TokenParser sm4Parser = TokenParser(sm4_chunk ? ((uint32_t*)sm4_chunk + 2) : ((uint32_t*)&data[0]), sm4_chunk ? sm4_chunk->size : data.size());
+	sm4Parser.Parse();
+	delete dxbc;
 
     return EXIT_SUCCESS;
 }

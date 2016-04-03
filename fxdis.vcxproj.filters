@@ -27,16 +27,10 @@
     <ClCompile Include="tools\fxdis.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\sm4_analyze.cpp">
+    <ClCompile Include="src\D3D11TokenParser.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\sm4_dump.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\sm4_parse.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\sm4_text.cpp">
+    <ClCompile Include="src\D3D11TokenText.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -47,13 +41,10 @@
     <ClInclude Include="include\le32.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="include\sm4.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="include\sm4_defs.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="src\utils.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\D3D11TokenParser.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
