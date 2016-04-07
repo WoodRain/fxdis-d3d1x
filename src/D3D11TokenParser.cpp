@@ -30,7 +30,7 @@ void TokenParser::ParseOpcode()
 	uint32_t remainLen = instructLen - 1;
 
 	uint32_t extOpcodeToken = 0;
-	bool extOpcode = DECODE_IS_D3D10_SB_OPCODE_EXTENDED(opcodeToken) ? true : false; // It's always zero in custom data.
+	bool extOpcode = DECODE_IS_D3D10_SB_OPCODE_EXTENDED(opcodeToken) != 0; // It's always zero in custom data.
 	if (extOpcode)
 	{
 		extOpcodeToken = *tokenCurrent++; // only one extend opcode is supported currently.
@@ -623,7 +623,7 @@ void TokenParser::ParseOperand(bool firstOperand, D3D10_SB_OPCODE_TYPE opcodeTyp
 	uint32_t oprndToken = *tokenCurrent++;
 	D3D10_SB_OPERAND_TYPE oprndType = DECODE_D3D10_SB_OPERAND_TYPE(oprndToken);
 	cout << " " << OperandText[oprndType];
-	bool extOprnd = DECODE_IS_D3D10_SB_OPERAND_EXTENDED(oprndToken) ? true : false;
+	bool extOprnd = DECODE_IS_D3D10_SB_OPERAND_EXTENDED(oprndToken) != 0;
 	uint32_t extOprndToken = 0;
 	if (extOprnd)
 	{
